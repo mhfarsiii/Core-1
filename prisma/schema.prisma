@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  email        String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  imageUrl    String?  // تصویر دسته‌بندی
+  description String?  // توضیحات دسته‌بندی
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // رابطه با کارها
+  works       Work[]
+}
+
+model Work {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  // توضیحات کار
+  mainImageUrl String  // تصویر اصلی کار
+  additionalImages Json? // تصاویر اضافی (JSON array)
+  videoLink   String?  // لینک ویدیو (اختیاری)
+  categoryId  Int      // شناسه دسته‌بندی
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // رابطه با دسته‌بندی
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+model Image {
+  id          String   @id @default(cuid())
+  url         String
+  title       String
+  description String?  // توضیحات عکس
+  category    String?  // دسته‌بندی (مثل: طراحی، عکاسی، کد)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Text {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.LongText
+  excerpt   String?  // خلاصه متن
+  category  String?  // دسته‌بندی (مثل: وبلاگ، پروژه، درباره)
+  published Boolean  @default(false) // آیا منتشر شده یا نه
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 
