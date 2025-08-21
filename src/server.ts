@@ -24,7 +24,6 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
   // Add subdomain to request object
   ;(req as any).subdomain = subdomain
   
-  console.log(`🌐 Request from subdomain: ${subdomain}`)
   next()
 })
 
@@ -168,22 +167,10 @@ app.listen(Number(PORT) , '0.0.0.0',() => {
   const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
   const baseUrl = process.env.NODE_ENV === 'production' ? `${protocol}://${apiDomain}` : `http://localhost:${PORT}`
   
-  console.log(`🚀 Personal Portfolio API is running on port ${PORT}`)
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🌐 Domain: ${apiDomain}`)
-  console.log(`📁 Uploads directory: ${path.join(__dirname, '../uploads')}`)
-  console.log(`🔗 Health check: ${baseUrl}/health`)
-  console.log(`🖼️  Image API: ${baseUrl}/images`)
-  console.log(`📝 Text API: ${baseUrl}/texts`)
-  console.log(`👤 Admin API: ${baseUrl}/admin`)
-  console.log(`🏷️  Category API: ${baseUrl}/categories`)
-  console.log(`💼 Work API: ${baseUrl}/works`)
-  console.log(`🌐 Public API: ${baseUrl}/public`)
+  
   
   if (process.env.NODE_ENV !== 'production') {
     console.log(`📄 Examples: ${baseUrl}/examples/`)
   }
   
-  console.log(`\n🔧 API is configured for domain: ${apiDomain}`)
-  console.log(`🔒 CORS enabled for: ${process.env.CORS_ORIGIN || 'default origins'}`)
 }) 
