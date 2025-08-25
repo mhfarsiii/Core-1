@@ -1,23 +1,24 @@
-# Base image
+# Simple Node.js Backend Dockerfile - using debian for better compatibility
 FROM node:18-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies for native modules (bcrypt, Prisma)
+# Update and install dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
-    bash \
+    libssl3 \
+    openssl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files and prisma schema
-COPY package.json package-lock.json* ./
+# Copy package files
+COPY package*.json ./
 COPY prisma ./prisma
 
-# Install all dependencies (including dev dependencies for build)
-RUN npm install
+# Install all dependencies (needed for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -25,23 +26,15 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Clean up dev dependencies
+# Remove dev dependencies
 RUN npm prune --production
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Create uploads directory and set permissions
+RUN mkdir -p uploads && chown -R node:node /app
 
-# Create non-root user for security
-RUN groupadd -g 1001 nodejs && useradd -r -u 1001 -g nodejs nodejs
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+USER node
 
-# Expose port
 EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
 
 # Start the application
 CMD ["npm", "start"]
