@@ -1,27 +1,49 @@
 import { Router } from 'express';
 import { CategoryController } from '../controllers/categoryController';
+import { CategoryService } from '../services/categoryService';
 import { authMiddleware } from '../middlewares/auth';
-import { upload } from '../middlewares/upload';
+import { uploadSingle } from '../middlewares/upload';
+import { ApiResponse } from '../types/interfaces';
 
 const router = Router();
-const categoryController = new CategoryController();
+const categoryService = new CategoryService();
+const categoryController = new CategoryController(categoryService);
 
-// همه مسیرها نیاز به احراز هویت دارند
+// API info endpoint (public)
+router.get('/info', (req, res) => {
+  const response: ApiResponse = {
+    message: 'Category API endpoints',
+    data: {
+      endpoints: {
+        'POST /': 'Create category (requires auth + image upload)',
+        'GET /': 'Get all categories (requires auth)',
+        'GET /:id': 'Get category by ID (requires auth)',
+        'PUT /:id': 'Update category (requires auth + optional image upload)',
+        'DELETE /:id': 'Delete category (requires auth)'
+      },
+      version: '1.0.0',
+      authentication: 'Bearer token required for all endpoints except /info'
+    }
+  };
+  res.status(200).json(response);
+});
+
+// All routes below require authentication
 router.use(authMiddleware);
 
-// ایجاد دسته‌بندی جدید (POST)
-router.post('/', upload.single('image'), categoryController.createCategory);
+// Create new category (POST)
+router.post('/', uploadSingle('image'), (req, res) => categoryController.createCategory(req, res));
 
-// دریافت همه دسته‌بندی‌ها (GET)
-router.get('/', categoryController.getAllCategories);
+// Get all categories (GET)
+router.get('/', (req, res) => categoryController.getAllCategories(req, res));
 
-// دریافت دسته‌بندی با شناسه (GET)
-router.get('/:id', categoryController.getCategoryById);
+// Get category by ID (GET)
+router.get('/:id', (req, res) => categoryController.getCategoryById(req, res));
 
-// به‌روزرسانی دسته‌بندی (PUT)
-router.put('/:id', upload.single('image'), categoryController.updateCategory);
+// Update category (PUT)
+router.put('/:id', uploadSingle('image'), (req, res) => categoryController.updateCategory(req, res));
 
-// حذف دسته‌بندی (DELETE)
-router.delete('/:id', categoryController.deleteCategory);
+// Delete category (DELETE)
+router.delete('/:id', (req, res) => categoryController.deleteCategory(req, res));
 
 export default router;

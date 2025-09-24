@@ -1,147 +1,183 @@
-import { Request, Response } from 'express'
-import { TextService } from '../services/textService'
-
-const textService = new TextService()
+import { Request, Response } from 'express';
+import { TextService } from '../services/textService';
+import { ApiResponse } from '../types/interfaces';
+import {
+  ValidationError,
+  NotFoundError,
+  DatabaseError
+} from '../types/errors';
 
 export class TextController {
-  async createText(req: Request, res: Response) {
-    try {
-      const { title, content, excerpt, category, published } = req.body
-      
-      if (!title || !content) {
-        return res.status(400).json({ error: 'Title and content are required' })
-      }
+  private textService: TextService;
 
-      const result = await textService.createText({
+  constructor(textService?: TextService) {
+    this.textService = textService || new TextService();
+  }
+  async createText(req: Request, res: Response): Promise<void> {
+    try {
+      const { title, content, excerpt, category, published } = req.body;
+      
+      const text = await this.textService.createText({
         title,
         content,
         excerpt,
         category,
         published: published || false
-      })
+      });
 
-      if (!result.success) {
-        return res.status(400).json(result);
+      const response: ApiResponse = {
+        message: 'Text created successfully',
+        data: text
+      };
+
+      res.status(201).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  async getAllTexts(req: Request, res: Response): Promise<void> {
+    try {
+      const published = req.query.published === 'true' ? true : req.query.published === 'false' ? false : undefined;
+      const texts = await this.textService.getAllTexts(published);
+      
+      const response: ApiResponse = {
+        message: 'Texts retrieved successfully',
+        data: texts
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  async getTextById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const text = await this.textService.getTextById(id);
+      
+      if (!text) {
+        throw new NotFoundError('Text not found');
       }
 
-      res.status(201).json({
-        message: 'Text created successfully',
-        text: result.data
-      })
+      const response: ApiResponse = {
+        message: 'Text retrieved successfully',
+        data: text
+      };
+
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Error creating text:', error)
-      res.status(500).json({ error: 'Failed to create text' })
+      this.handleError(error, res);
     }
   }
 
-  async getAllTexts(req: Request, res: Response) {
+  async updateText(req: Request, res: Response): Promise<void> {
     try {
-      const result = await textService.getAllTexts()
-      res.json(result)
-    } catch (error) {
-      console.error('Error fetching texts:', error)
-      res.status(500).json({ error: 'Failed to fetch texts' })
-    }
-  }
-
-  async getPublishedTexts(req: Request, res: Response) {
-    try {
-      const result = await textService.getPublishedTexts()
-      res.json(result)
-    } catch (error) {
-      console.error('Error fetching published texts:', error)
-      res.status(500).json({ error: 'Failed to fetch texts' })
-    }
-  }
-
-  async getTextsByCategory(req: Request, res: Response) {
-    try {
-      const { category } = req.params
-      const result = await textService.getTextsByCategory(category)
-      res.json(result)
-    } catch (error) {
-      console.error('Error fetching texts by category:', error)
-      res.status(500).json({ error: 'Failed to fetch texts' })
-    }
-  }
-
-  async updateText(req: Request, res: Response) {
-    try {
-      const { id } = req.params
-      const { title, content, excerpt, category, published } = req.body
+      const { id } = req.params;
+      const { title, content, excerpt, category, published } = req.body;
       
-      const result = await textService.updateText(id, {
+      const text = await this.textService.updateText(id, {
         title,
         content,
         excerpt,
         category,
         published
-      })
+      });
 
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
-
-      res.json({
+      const response: ApiResponse = {
         message: 'Text updated successfully',
-        text: result.data
-      })
+        data: text
+      };
+
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Error updating text:', error)
-      res.status(500).json({ error: 'Failed to update text' })
+      this.handleError(error, res);
     }
   }
 
-  async deleteText(req: Request, res: Response) {
+  async deleteText(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params
-      const result = await textService.deleteText(id)
+      const { id } = req.params;
+      await this.textService.deleteText(id);
       
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
-
-      res.json({
+      const response: ApiResponse = {
         message: 'Text deleted successfully'
-      })
+      };
+
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Error deleting text:', error)
-      res.status(500).json({ error: 'Failed to delete text' })
+      this.handleError(error, res);
     }
   }
 
-  async getTextById(req: Request, res: Response) {
+  async publishText(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params
-      const result = await textService.getTextById(id)
+      const { id } = req.params;
+      const text = await this.textService.publishText(id);
       
-      if (!result.success) {
-        return res.status(404).json(result);
-      }
+      const response: ApiResponse = {
+        message: 'Text published successfully',
+        data: text
+      };
 
-      res.json(result)
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Error fetching text:', error)
-      res.status(500).json({ error: 'Failed to fetch text' })
+      this.handleError(error, res);
     }
   }
 
-  async togglePublish(req: Request, res: Response) {
+  async unpublishText(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params
-      const result = await textService.togglePublish(id)
+      const { id } = req.params;
+      const text = await this.textService.unpublishText(id);
       
-      if (!result.success || !result.data) {
-        return res.status(400).json(result);
-      }
-      
-      res.json({
-        message: `Text ${result.data.published ? 'published' : 'unpublished'} successfully`,
-        text: result.data
-      })
+      const response: ApiResponse = {
+        message: 'Text unpublished successfully',
+        data: text
+      };
+
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Error toggling publish status:', error)
-      res.status(500).json({ error: 'Failed to toggle publish status' })
+      this.handleError(error, res);
     }
+  }
+
+  private handleError(error: unknown, res: Response): void {
+    console.error('Controller error:', error);
+    
+    if (error instanceof ValidationError) {
+      const response: ApiResponse = {
+        message: 'Validation failed',
+        error: error.message
+      };
+      res.status(400).json(response);
+      return;
+    }
+    
+    if (error instanceof NotFoundError) {
+      const response: ApiResponse = {
+        message: 'Resource not found',
+        error: error.message
+      };
+      res.status(404).json(response);
+      return;
+    }
+    
+    if (error instanceof DatabaseError) {
+      const response: ApiResponse = {
+        message: 'Database operation failed',
+        error: 'An internal error occurred'
+      };
+      res.status(500).json(response);
+      return;
+    }
+    
+    // Unknown error
+    const response: ApiResponse = {
+      message: 'Internal server error',
+      error: 'An unexpected error occurred'
+    };
+    res.status(500).json(response);
   }
 } 

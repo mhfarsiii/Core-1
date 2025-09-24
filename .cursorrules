@@ -1,0 +1,388 @@
+# Cursor Rules - Personal Portfolio API Project
+# Microsoft Principal Engineer Best Practices & Standards
+
+## Project Overview
+This is a TypeScript/Express.js Personal Portfolio API with the following architecture:
+- **Backend**: Node.js + Express.js + TypeScript
+- **Database**: MySQL with Prisma ORM
+- **Authentication**: JWT-based admin authentication
+- **File Upload**: Multer for image/file handling
+- **Deployment**: Docker + Production ready
+
+## Project Structure
+```
+Core-1/
+├── src/
+│   ├── controllers/          # Request handlers (MVC pattern)
+│   │   ├── adminController.ts
+│   │   ├── categoryController.ts
+│   │   ├── imageController.ts
+│   │   ├── textController.ts
+│   │   └── workController.ts
+│   ├── services/            # Business logic layer
+│   │   ├── adminService.ts
+│   │   ├── categoryService.ts
+│   │   ├── imageService.ts
+│   │   ├── prisma.ts
+│   │   ├── textService.ts
+│   │   └── workService.ts
+│   ├── middlewares/         # Express middlewares
+│   │   ├── auth.ts
+│   │   └── upload.ts
+│   ├── routes/             # API route definitions
+│   │   ├── adminRoutes.ts
+│   │   ├── categoryRoutes.ts
+│   │   ├── imageRoutes.ts
+│   │   ├── publicRoutes.ts
+│   │   ├── textRoutes.ts
+│   │   └── workRoutes.ts
+│   ├── scripts/           # Database utilities
+│   │   └── seed.ts
+│   └── server.ts         # Main application entry
+├── prisma/
+│   └── schema.prisma     # Database schema
+├── uploads/              # File storage
+├── package.json
+├── tsconfig.json
+├── Dockerfile
+└── deployment configs
+```
+
+## Core Development Principles
+
+### 1. Code Quality & Standards
+- **TypeScript First**: All code MUST be written in TypeScript with strict type checking
+- **No `any` types**: Use proper type definitions, interfaces, and generics
+- **Consistent naming**: Use camelCase for variables/functions, PascalCase for classes/interfaces
+- **Error handling**: Always implement proper error handling with try-catch blocks
+- **Input validation**: Validate all user inputs at controller level
+- **Security**: Never expose sensitive data, always sanitize inputs
+
+### 2. Architecture Patterns
+- **MVC Pattern**: Controllers handle requests, Services contain business logic
+- **Dependency Injection**: Use constructor injection for services
+- **Single Responsibility**: Each class/function should have one clear purpose
+- **Interface Segregation**: Define clear interfaces for all service contracts
+- **Repository Pattern**: Use Prisma as data access layer with proper abstractions
+
+### 3. Database & ORM Best Practices
+- **Prisma ORM**: Use Prisma for all database operations
+- **Type Safety**: Leverage Prisma's generated types
+- **Transactions**: Use database transactions for multi-step operations
+- **Migrations**: Always use Prisma migrations for schema changes
+- **Indexing**: Add proper database indexes for performance
+
+### 4. API Design Standards
+- **RESTful APIs**: Follow REST conventions for all endpoints
+- **HTTP Status Codes**: Use appropriate status codes (200, 201, 400, 401, 404, 500)
+- **Consistent Response Format**: 
+  ```typescript
+  {
+    message: string,
+    data?: any,
+    error?: string,
+    meta?: { page?, limit?, total? }
+  }
+  ```
+- **Authentication**: JWT-based auth with Bearer tokens
+- **CORS**: Proper CORS configuration for production domains
+
+### 5. File Structure & Organization
+- **Feature-based grouping**: Group related files by feature/domain
+- **Clear separation**: Controllers, Services, Routes, Middlewares in separate directories
+- **Index files**: Use index.ts files for clean imports
+- **Constants**: Define all constants in dedicated files
+- **Environment**: Use .env files for configuration
+
+## Implementation Guidelines
+
+### Controllers
+```typescript
+// ✅ Good Controller Pattern
+export class AdminController {
+  private adminService: AdminService;
+  
+  constructor(adminService: AdminService) {
+    this.adminService = adminService;
+  }
+
+  async login(req: Request, res: Response): Promise<void> {
+    try {
+      const { username, password } = req.body;
+      
+      // Input validation
+      if (!username || !password) {
+        res.status(400).json({ 
+          error: 'Username and password are required' 
+        });
+        return;
+      }
+
+      const result = await this.adminService.login({ username, password });
+      
+      res.status(200).json({
+        message: 'Login successful',
+        data: result
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(401).json({ 
+        error: 'Invalid credentials' 
+      });
+    }
+  }
+}
+```
+
+### Services
+```typescript
+// ✅ Good Service Pattern
+export interface IAdminService {
+  login(data: AdminLoginData): Promise<LoginResult>;
+  createAdmin(data: CreateAdminData): Promise<Admin>;
+  verifyToken(token: string): Promise<AdminProfile>;
+}
+
+export class AdminService implements IAdminService {
+  private readonly jwtSecret: string;
+  
+  constructor() {
+    this.jwtSecret = process.env.JWT_SECRET || 'default-secret';
+  }
+
+  async login(data: AdminLoginData): Promise<LoginResult> {
+    // Business logic here
+  }
+}
+```
+
+### Error Handling
+```typescript
+// ✅ Custom Error Classes
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+export class AuthenticationError extends Error {
+  constructor(message: string = 'Authentication failed') {
+    super(message);
+    this.name = 'AuthenticationError';
+  }
+}
+
+// ✅ Global Error Handler
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', err);
+  
+  if (err instanceof ValidationError) {
+    return res.status(400).json({ error: err.message });
+  }
+  
+  if (err instanceof AuthenticationError) {
+    return res.status(401).json({ error: err.message });
+  }
+  
+  res.status(500).json({ error: 'Internal server error' });
+});
+```
+
+### Database Operations
+```typescript
+// ✅ Proper Prisma Usage
+export class CategoryService {
+  async createCategory(data: CreateCategoryData): Promise<Category> {
+    return await prisma.category.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        imageUrl: data.imageUrl
+      },
+      include: {
+        works: true
+      }
+    });
+  }
+
+  async getCategoriesWithPagination(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    
+    const [categories, total] = await Promise.all([
+      prisma.category.findMany({
+        skip,
+        take: limit,
+        include: {
+          works: {
+            select: {
+              id: true,
+              title: true,
+              mainImageUrl: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }),
+      prisma.category.count()
+    ]);
+
+    return {
+      data: categories,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+}
+```
+
+## Security Best Practices
+
+### Authentication & Authorization
+- Use JWT tokens with appropriate expiration times
+- Implement refresh token mechanism for long-lived sessions
+- Hash passwords with bcrypt (minimum 12 rounds)
+- Validate and sanitize all inputs
+- Use HTTPS in production
+- Implement rate limiting for authentication endpoints
+
+### Data Protection
+- Never log sensitive information (passwords, tokens)
+- Use environment variables for secrets
+- Implement proper CORS policies
+- Validate file uploads (type, size, content)
+- Use parameterized queries (Prisma handles this)
+
+## Performance Guidelines
+
+### Database Optimization
+- Use database indexes for frequently queried fields
+- Implement pagination for list endpoints
+- Use `select` and `include` strategically in Prisma queries
+- Avoid N+1 query problems
+- Use database transactions for consistency
+
+### API Performance
+- Implement response caching where appropriate
+- Use compression middleware
+- Optimize image uploads and serving
+- Implement proper logging and monitoring
+
+## Testing Standards
+
+### Unit Tests
+```typescript
+// ✅ Service Testing Example
+describe('AdminService', () => {
+  let adminService: AdminService;
+  
+  beforeEach(() => {
+    adminService = new AdminService();
+  });
+
+  it('should create admin with hashed password', async () => {
+    const adminData = {
+      username: 'testuser',
+      password: 'testpass123',
+      email: 'test@example.com'
+    };
+
+    const admin = await adminService.createAdmin(adminData);
+    
+    expect(admin.username).toBe(adminData.username);
+    expect(admin.passwordHash).not.toBe(adminData.password);
+    expect(admin.email).toBe(adminData.email);
+  });
+});
+```
+
+### Integration Tests
+- Test API endpoints with real database
+- Test authentication flows
+- Test file upload functionality
+- Test error scenarios
+
+## Deployment & DevOps
+
+### Environment Configuration
+```typescript
+// ✅ Environment Validation
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'PORT',
+  'NODE_ENV'
+];
+
+requiredEnvVars.forEach(envVar => {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+});
+```
+
+### Docker Best Practices
+- Use multi-stage builds
+- Run as non-root user
+- Minimize image size
+- Use .dockerignore
+- Health checks for containers
+
+## Code Review Checklist
+
+### Before Committing
+- [ ] TypeScript compilation passes without errors
+- [ ] All tests pass
+- [ ] Code follows established patterns
+- [ ] Proper error handling implemented
+- [ ] Input validation added
+- [ ] Security considerations addressed
+- [ ] Performance implications considered
+- [ ] Documentation updated if needed
+
+### Code Quality
+- [ ] No hardcoded values
+- [ ] Consistent naming conventions
+- [ ] Proper type definitions
+- [ ] Clean, readable code
+- [ ] Appropriate comments for complex logic
+- [ ] No console.log statements in production code
+
+## Framework-Specific Rules
+
+### When working with this project:
+
+1. **Always use the existing architecture patterns**
+2. **Follow the established file structure**
+3. **Use Prisma for all database operations**
+4. **Implement proper authentication for admin routes**
+5. **Validate inputs at controller level**
+6. **Handle errors gracefully with appropriate HTTP status codes**
+7. **Use TypeScript interfaces for all data structures**
+8. **Follow the existing naming conventions**
+9. **Test all changes thoroughly**
+10. **Update documentation when adding new features**
+
+### Current Models & Relationships:
+- **Admin**: Authentication and authorization
+- **Category**: Work categorization with image support
+- **Work**: Portfolio items with main image and additional images
+- **Image**: Standalone image management
+- **Text**: Content management with publishing workflow
+
+### API Endpoints Structure:
+- `/api/admin/*` - Admin authentication and management
+- `/api/categories/*` - Category CRUD operations
+- `/api/works/*` - Portfolio work management
+- `/api/images/*` - Image upload and management
+- `/api/texts/*` - Text content management
+- `/api/public/*` - Public-facing endpoints
+
+Remember: This project serves a personal portfolio with admin panel, multi-domain support, and file upload capabilities. Always maintain the existing patterns and security measures.
+

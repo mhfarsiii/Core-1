@@ -1,42 +1,63 @@
 import prisma from './prisma';
+import type { Work } from '@prisma/client';
+import {
+  CreateWorkData,
+  UpdateWorkData,
+  WorkWithCategory,
+  IWorkService
+} from '../types/interfaces';
+import {
+  ValidationError,
+  NotFoundError,
+  DatabaseError
+} from '../types/errors';
+import { generateSlug, generateUniqueSlug } from '../utils/slug';
 
-export interface CreateWorkData {
-  title: string;
-  description?: string;
-  mainImageUrl: string;
-  additionalImages?: string[];
-  videoLink?: string;
-  categoryId: number;
-}
-
-export interface UpdateWorkData {
-  title?: string;
-  description?: string;
-  mainImageUrl?: string;
-  additionalImages?: string[];
-  videoLink?: string;
-  categoryId?: number;
-}
-
-export class WorkService {
-  // ایجاد کار جدید
-  async createWork(data: CreateWorkData) {
+export class WorkService implements IWorkService {
+  async createWork(data: CreateWorkData): Promise<WorkWithCategory> {
     try {
-      // بررسی وجود دسته‌بندی
+      // Input validation
+      if (!data.title || data.title.trim().length === 0) {
+        throw new ValidationError('Work title is required');
+      }
+
+      if (!data.mainImageUrl) {
+        throw new ValidationError('Main image is required');
+      }
+
+      if (!data.categoryId || data.categoryId <= 0) {
+        throw new ValidationError('Valid category ID is required');
+      }
+
+      if (data.title.length > 255) {
+        throw new ValidationError('Work title must be less than 255 characters');
+      }
+
+      // Check if category exists
       const category = await prisma.category.findUnique({
         where: { id: data.categoryId }
       });
 
       if (!category) {
-        return { success: false, error: 'دسته‌بندی یافت نشد' };
+        throw new NotFoundError('Category not found');
       }
 
-      const work = await prisma.work.create({
+      const slug = generateSlug(data.title.trim());
+      
+      // Check if slug already exists
+      const existingWorks = await prisma.work.findMany({
+        select: { slug: true }
+      });
+      const existingSlugs = existingWorks.map((w: { slug: string }) => w.slug);
+      const uniqueSlug = generateUniqueSlug(slug, existingSlugs);
+
+      return await prisma.work.create({
         data: {
-          title: data.title,
-          description: data.description,
+          title: data.title.trim(),
+          slug: uniqueSlug,
+          description: data.description?.trim(),
           mainImageUrl: data.mainImageUrl,
-          additionalImages: data.additionalImages || [],
+          additionalImages: data.additionalImages ? JSON.stringify(data.additionalImages) : null,
           videoLink: data.videoLink,
           categoryId: data.categoryId,
         },
@@ -44,79 +65,88 @@ export class WorkService {
           category: true
         }
       });
-      
-      return { success: true, data: work };
     } catch (error) {
-      return { success: false, error: 'خطا در ایجاد کار' };
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to create work');
     }
   }
 
-  // دریافت همه کارها
-  async getAllWorks() {
+  async getAllWorks(): Promise<WorkWithCategory[]> {
     try {
-      const works = await prisma.work.findMany({
+      return await prisma.work.findMany({
         include: {
           category: true
         },
         orderBy: { createdAt: 'desc' }
       });
-      
-      return { success: true, data: works };
     } catch (error) {
-      return { success: false, error: 'خطا در دریافت کارها' };
+      throw new DatabaseError('Failed to fetch works');
     }
   }
 
-  // دریافت کار با شناسه
-  async getWorkById(id: number) {
+  async getWorkById(id: number): Promise<WorkWithCategory | null> {
     try {
-      const work = await prisma.work.findUnique({
+      if (!id || id <= 0) {
+        throw new ValidationError('Valid work ID is required');
+      }
+
+      return await prisma.work.findUnique({
         where: { id },
         include: {
           category: true
         }
       });
-      
-      if (!work) {
-        return { success: false, error: 'کار یافت نشد' };
-      }
-      
-      return { success: true, data: work };
     } catch (error) {
-      return { success: false, error: 'خطا در دریافت کار' };
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to fetch work');
     }
   }
 
-  // دریافت کارها بر اساس دسته‌بندی
-  async getWorksByCategory(categoryId: number) {
+  async getWorksByCategory(categoryId: number): Promise<WorkWithCategory[]> {
     try {
-      const works = await prisma.work.findMany({
+      if (!categoryId || categoryId <= 0) {
+        throw new ValidationError('Valid category ID is required');
+      }
+
+      return await prisma.work.findMany({
         where: { categoryId },
         include: {
           category: true
         },
         orderBy: { createdAt: 'desc' }
       });
-      
-      return { success: true, data: works };
     } catch (error) {
-      return { success: false, error: 'خطا در دریافت کارها' };
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to fetch works by category');
     }
   }
 
-  // دریافت کارهای مشابه (همان دسته‌بندی)
-  async getSimilarWorks(workId: number, limit: number = 4) {
+  async getSimilarWorks(workId: number, limit: number = 4): Promise<WorkWithCategory[]> {
     try {
+      if (!workId || workId <= 0) {
+        throw new ValidationError('Valid work ID is required');
+      }
+
+      if (limit <= 0 || limit > 50) {
+        throw new ValidationError('Limit must be between 1 and 50');
+      }
+
       const currentWork = await prisma.work.findUnique({
         where: { id: workId },
         select: { categoryId: true }
       });
 
       if (!currentWork) {
-        return { success: false, error: 'کار یافت نشد' };
+        throw new NotFoundError('Work not found');
       }
 
-      const similarWorks = await prisma.work.findMany({
+      return await prisma.work.findMany({
         where: {
           categoryId: currentWork.categoryId,
           id: { not: workId }
@@ -127,65 +157,124 @@ export class WorkService {
         orderBy: { createdAt: 'desc' },
         take: limit
       });
-      
-      return { success: true, data: similarWorks };
     } catch (error) {
-      return { success: false, error: 'خطا در دریافت کارهای مشابه' };
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to fetch similar works');
     }
   }
 
-  // به‌روزرسانی کار
-  async updateWork(id: number, data: UpdateWorkData) {
+  async updateWork(id: number, data: UpdateWorkData): Promise<WorkWithCategory> {
     try {
-      if (data.categoryId) {
-        // بررسی وجود دسته‌بندی جدید
+      if (!id || id <= 0) {
+        throw new ValidationError('Valid work ID is required');
+      }
+
+      // Check if work exists
+      const existingWork = await prisma.work.findUnique({
+        where: { id }
+      });
+
+      if (!existingWork) {
+        throw new NotFoundError('Work not found');
+      }
+
+      // Build update data
+      const updateData: any = {};
+      
+      if (data.title !== undefined) {
+        if (data.title.trim().length === 0) {
+          throw new ValidationError('Work title cannot be empty');
+        }
+        if (data.title.length > 255) {
+          throw new ValidationError('Work title must be less than 255 characters');
+        }
+        updateData.title = data.title.trim();
+        
+        // Generate new slug if title is changing
+        if (data.title.trim() !== existingWork.title) {
+          const slug = generateSlug(data.title.trim());
+          const existingWorks = await prisma.work.findMany({
+            where: { id: { not: id } },
+            select: { slug: true }
+          });
+          const existingSlugs = existingWorks.map((w: { slug: string }) => w.slug);
+          updateData.slug = generateUniqueSlug(slug, existingSlugs);
+        }
+      }
+      
+      if (data.description !== undefined) {
+        updateData.description = data.description?.trim();
+      }
+      
+      if (data.mainImageUrl !== undefined) {
+        updateData.mainImageUrl = data.mainImageUrl;
+      }
+      
+      if (data.additionalImages !== undefined) {
+        updateData.additionalImages = data.additionalImages ? JSON.stringify(data.additionalImages) : null;
+      }
+      
+      if (data.videoLink !== undefined) {
+        updateData.videoLink = data.videoLink;
+      }
+
+      // Validate category if being changed
+      if (data.categoryId !== undefined) {
+        if (data.categoryId <= 0) {
+          throw new ValidationError('Valid category ID is required');
+        }
+        
         const category = await prisma.category.findUnique({
           where: { id: data.categoryId }
         });
 
         if (!category) {
-          return { success: false, error: 'دسته‌بندی یافت نشد' };
+          throw new NotFoundError('Category not found');
         }
+        
+        updateData.categoryId = data.categoryId;
       }
 
-      // Only update fields that are provided
-      const updateData: any = {};
-      if (data.title !== undefined) updateData.title = data.title;
-      if (data.description !== undefined) updateData.description = data.description;
-      if (data.mainImageUrl !== undefined) updateData.mainImageUrl = data.mainImageUrl;
-      if (data.additionalImages !== undefined) updateData.additionalImages = data.additionalImages;
-      if (data.videoLink !== undefined) updateData.videoLink = data.videoLink;
-      if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-
-      const work = await prisma.work.update({
+      return await prisma.work.update({
         where: { id },
         data: updateData,
         include: {
           category: true
         }
       });
-      
-      return { success: true, data: work };
-    } catch (error: any) {
-      if (error.code === 'P2025') {
-        return { success: false, error: 'کار یافت نشد' };
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
       }
-      return { success: false, error: 'خطا در به‌روزرسانی کار' };
+      throw new DatabaseError('Failed to update work');
     }
   }
 
-  // حذف کار
-  async deleteWork(id: number) {
+  async deleteWork(id: number): Promise<void> {
     try {
+      if (!id || id <= 0) {
+        throw new ValidationError('Valid work ID is required');
+      }
+
+      // Check if work exists
+      const work = await prisma.work.findUnique({
+        where: { id }
+      });
+
+      if (!work) {
+        throw new NotFoundError('Work not found');
+      }
+
       await prisma.work.delete({
         where: { id },
       });
-      return { success: true, message: 'کار با موفقیت حذف شد' };
-    } catch (error: any) {
-      if (error.code === 'P2025') {
-        return { success: false, error: 'کار یافت نشد' };
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
       }
-      return { success: false, error: 'خطا در حذف کار' };
+      throw new DatabaseError('Failed to delete work');
     }
   }
 }

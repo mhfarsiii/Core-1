@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio API Comprehensive Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .auth-section {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .auth-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .auth-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .auth-status.authenticated {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .auth-status.unauthenticated {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .section-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-public {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-protected {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .endpoint-group {
+            margin-bottom: 25px;
+        }
+
+        .endpoint-item {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .endpoint-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .method-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .method-get { background: #d4edda; color: #155724; }
+        .method-post { background: #cce5ff; color: #004085; }
+        .method-put { background: #fff3cd; color: #856404; }
+        .method-delete { background: #f8d7da; color: #721c24; }
+        .method-patch { background: #e2e3e5; color: #383d41; }
+
+        .endpoint-url {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .response-container {
+            margin-top: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .response-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .response-content {
+            padding: 15px;
+            background: #f8f9fa;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .upload-area {
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .file-item {
+            padding: 5px 10px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-loading { background: #ffc107; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .auth-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .endpoint-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Portfolio API Test Suite</h1>
+            <p>Comprehensive testing interface for all API endpoints</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="auth-section">
+            <div class="auth-controls">
+                <div id="authStatus" class="auth-status unauthenticated">
+                    <span class="status-indicator status-error"></span>
+                    Not Authenticated
+                </div>
+                
+                <div class="form-group" style="margin: 0; flex: 1; max-width: 200px;">
+                    <input type="text" id="usernameInput" class="form-control" placeholder="Username" value="admin">
+                </div>
+                
+                <div class="form-group" style="margin: 0; flex: 1; max-width: 200px;">
+                    <input type="password" id="passwordInput" class="form-control" placeholder="Password" value="admin123">
+                </div>
+                
+                <button id="loginBtn" class="btn btn-primary">Login</button>
+                <button id="createAdminBtn" class="btn btn-secondary">Create Admin</button>
+                <button id="logoutBtn" class="btn btn-danger" style="display: none;">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button onclick="testAllPublicEndpoints()" class="btn btn-success">Test All Public APIs</button>
+                <button onclick="testAllAdminEndpoints()" class="btn btn-warning">Test All Admin APIs</button>
+                <button onclick="clearAllResponses()" class="btn btn-secondary">Clear All Responses</button>
+                <button onclick="exportResults()" class="btn btn-primary">Export Results</button>
+            </div>
+
+            <!-- Public Endpoints -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🌍 Public Endpoints</h2>
+                    <span class="section-badge badge-public">No Auth Required</span>
+                </div>
+                <div class="section-content">
+                    
+                    <!-- Health Check -->
+                    <div class="endpoint-group">
+                        <h3>Health & Info</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/health</span>
+                            <button onclick="testEndpoint('GET', '/health')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/</span>
+                            <button onclick="testEndpoint('GET', '/')" class="btn btn-primary">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="endpoint-group">
+                        <h3>Categories (Public)</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/public/categories</span>
+                            <button onclick="testEndpoint('GET', '/api/public/categories')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/public/categories/{id}/works</span>
+                            <input type="number" id="categoryIdInput" placeholder="Category ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testCategoryWorks()" class="btn btn-primary">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Works -->
+                    <div class="endpoint-group">
+                        <h3>Works (Public)</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/public/works</span>
+                            <button onclick="testEndpoint('GET', '/api/public/works')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/public/works/{id}</span>
+                            <input type="number" id="workIdInput" placeholder="Work ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testWorkById()" class="btn btn-primary">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Texts -->
+                    <div class="endpoint-group">
+                        <h3>Texts (Public)</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/texts/published</span>
+                            <button onclick="testEndpoint('GET', '/api/texts/published')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/texts/{id}</span>
+                            <input type="number" id="textIdInput" placeholder="Text ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testTextById()" class="btn btn-primary">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Images -->
+                    <div class="endpoint-group">
+                        <h3>Images (Public)</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/images</span>
+                            <button onclick="testEndpoint('GET', '/api/images')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/images/category/{category}</span>
+                            <input type="text" id="imageCategoryInput" placeholder="Category" value="portfolio" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testImagesByCategory()" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/images/{id}</span>
+                            <input type="number" id="imageIdInput" placeholder="Image ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testImageById()" class="btn btn-primary">Test</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Endpoints -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🔐 Admin Endpoints</h2>
+                    <span class="section-badge badge-protected">Auth Required</span>
+                </div>
+                <div class="section-content">
+                    
+                    <!-- Admin Authentication -->
+                    <div class="endpoint-group">
+                        <h3>Authentication</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/admin</span>
+                            <button onclick="testEndpoint('GET', '/api/admin')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/admin/profile</span>
+                            <button onclick="testEndpoint('GET', '/api/admin/profile', null, true)" class="btn btn-primary">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Categories Management -->
+                    <div class="endpoint-group">
+                        <h3>Categories Management</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/categories/info</span>
+                            <button onclick="testEndpoint('GET', '/api/categories/info')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/categories</span>
+                            <button onclick="testEndpoint('GET', '/api/categories', null, true)" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="endpoint-url">/api/categories</span>
+                            <button onclick="showCreateCategoryForm()" class="btn btn-success">Create</button>
+                        </div>
+                    </div>
+
+                    <!-- Works Management -->
+                    <div class="endpoint-group">
+                        <h3>Works Management</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/works/info</span>
+                            <button onclick="testEndpoint('GET', '/api/works/info')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/works</span>
+                            <button onclick="testEndpoint('GET', '/api/works', null, true)" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="endpoint-url">/api/works</span>
+                            <button onclick="showCreateWorkForm()" class="btn btn-success">Create</button>
+                        </div>
+                    </div>
+
+                    <!-- Texts Management -->
+                    <div class="endpoint-group">
+                        <h3>Texts Management</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/texts/info</span>
+                            <button onclick="testEndpoint('GET', '/api/texts/info')" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/texts</span>
+                            <button onclick="testEndpoint('GET', '/api/texts', null, true)" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="endpoint-url">/api/texts</span>
+                            <button onclick="showCreateTextForm()" class="btn btn-success">Create</button>
+                        </div>
+                    </div>
+
+                    <!-- Images Management -->
+                    <div class="endpoint-group">
+                        <h3>Images Management</h3>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-post">POST</span>
+                            <span class="endpoint-url">/api/images</span>
+                            <button onclick="showImageUploadForm()" class="btn btn-success">Upload</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Container -->
+            <div id="responseContainer" class="response-container" style="display: none;">
+                <div class="response-header">
+                    <span id="responseTitle">API Response</span>
+                    <button onclick="clearResponse()" class="btn btn-secondary" style="float: right; padding: 2px 8px; font-size: 0.8rem;">Clear</button>
+                </div>
+                <div id="responseContent" class="response-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forms Modal Overlay -->
+    <div id="modalOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div id="modalContent"></div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let apiBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin;
+        
+        // Update auth status on page load
+        updateAuthStatus();
+
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
+            if (authToken) {
+                authStatus.innerHTML = '<span class="status-indicator status-success"></span>Authenticated';
+                authStatus.className = 'auth-status authenticated';
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+            } else {
+                authStatus.innerHTML = '<span class="status-indicator status-error"></span>Not Authenticated';
+                authStatus.className = 'auth-status unauthenticated';
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        // Authentication functions
+        document.getElementById('loginBtn').addEventListener('click', async function() {
+            const username = document.getElementById('usernameInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            if (!username || !password) {
+                showResponse('Login Error', 'Username and password are required', 'error');
+                return;
+            }
+            
+            try {
+                showResponse('Login', 'Attempting login...', 'loading');
+                
+                const response = await fetch(`${apiBaseUrl}/api/admin/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.data && data.data.token) {
+                    authToken = data.data.token;
+                    localStorage.setItem('authToken', authToken);
+                    updateAuthStatus();
+                    showResponse('Login Success', JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResponse('Login Failed', JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResponse('Login Error', `Network error: ${error.message}`, 'error');
+            }
+        });
+
+        document.getElementById('createAdminBtn').addEventListener('click', async function() {
+            const username = document.getElementById('usernameInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            if (!username || !password) {
+                showResponse('Create Admin Error', 'Username and password are required', 'error');
+                return;
+            }
+            
+            try {
+                showResponse('Create Admin', 'Creating admin account...', 'loading');
+                
+                const response = await fetch(`${apiBaseUrl}/api/admin/create-admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        username, 
+                        password, 
+                        email: `${username}@example.com` 
+                    })
+                });
+                
+                const data = await response.json();
+                showResponse('Create Admin Result', JSON.stringify(data, null, 2), response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse('Create Admin Error', `Network error: ${error.message}`, 'error');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            authToken = null;
+            localStorage.removeItem('authToken');
+            updateAuthStatus();
+            showResponse('Logout', 'Successfully logged out', 'success');
+        });
+
+        // Generic test function
+        async function testEndpoint(method, url, body = null, requireAuth = false, isFormData = false) {
+            try {
+                const fullUrl = `${apiBaseUrl}${url}`;
+                showResponse(`${method} ${url}`, 'Sending request...', 'loading');
+                
+                const headers = {};
+                
+                if (requireAuth && authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+                
+                if (body && !isFormData) {
+                    headers['Content-Type'] = 'application/json';
+                }
+                
+                const options = {
+                    method: method,
+                    headers: headers
+                };
+                
+                if (body) {
+                    if (isFormData) {
+                        options.body = body;
+                    } else {
+                        options.body = JSON.stringify(body);
+                    }
+                }
+                
+                const response = await fetch(fullUrl, options);
+                const data = await response.json();
+                
+                const statusClass = response.ok ? 'success' : 'error';
+                const responseText = `Status: ${response.status} ${response.statusText}\n\n${JSON.stringify(data, null, 2)}`;
+                
+                showResponse(`${method} ${url}`, responseText, statusClass);
+            } catch (error) {
+                showResponse(`${method} ${url}`, `Network error: ${error.message}`, 'error');
+            }
+        }
+
+        // Specific test functions
+        function testCategoryWorks() {
+            const categoryId = document.getElementById('categoryIdInput').value;
+            if (!categoryId) {
+                showResponse('Error', 'Please enter a category ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/public/categories/${categoryId}/works`);
+        }
+
+        function testWorkById() {
+            const workId = document.getElementById('workIdInput').value;
+            if (!workId) {
+                showResponse('Error', 'Please enter a work ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/public/works/${workId}`);
+        }
+
+        function testTextById() {
+            const textId = document.getElementById('textIdInput').value;
+            if (!textId) {
+                showResponse('Error', 'Please enter a text ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/texts/${textId}`);
+        }
+
+        function testImagesByCategory() {
+            const category = document.getElementById('imageCategoryInput').value;
+            if (!category) {
+                showResponse('Error', 'Please enter a category', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/images/category/${category}`);
+        }
+
+        function testImageById() {
+            const imageId = document.getElementById('imageIdInput').value;
+            if (!imageId) {
+                showResponse('Error', 'Please enter an image ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/images/${imageId}`);
+        }
+
+        // Batch testing functions
+        async function testAllPublicEndpoints() {
+            showResponse('Batch Test', 'Testing all public endpoints...', 'loading');
+            
+            const publicEndpoints = [
+                { method: 'GET', url: '/health' },
+                { method: 'GET', url: '/' },
+                { method: 'GET', url: '/api/public/categories' },
+                { method: 'GET', url: '/api/public/works' },
+                { method: 'GET', url: '/api/texts/published' },
+                { method: 'GET', url: '/api/images' }
+            ];
+            
+            let results = [];
+            
+            for (const endpoint of publicEndpoints) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}${endpoint.url}`);
+                    const data = await response.json();
+                    results.push({
+                        endpoint: `${endpoint.method} ${endpoint.url}`,
+                        status: response.status,
+                        success: response.ok,
+                        data: data
+                    });
+                } catch (error) {
+                    results.push({
+                        endpoint: `${endpoint.method} ${endpoint.url}`,
+                        status: 'ERROR',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            showResponse('Public Endpoints Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        async function testAllAdminEndpoints() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first to test admin endpoints', 'error');
+                return;
+            }
+            
+            showResponse('Batch Test', 'Testing all admin endpoints...', 'loading');
+            
+            const adminEndpoints = [
+                { method: 'GET', url: '/api/admin' },
+                { method: 'GET', url: '/api/admin/profile' },
+                { method: 'GET', url: '/api/categories/info' },
+                { method: 'GET', url: '/api/categories' },
+                { method: 'GET', url: '/api/works/info' },
+                { method: 'GET', url: '/api/works' },
+                { method: 'GET', url: '/api/texts/info' },
+                { method: 'GET', url: '/api/texts' }
+            ];
+            
+            let results = [];
+            
+            for (const endpoint of adminEndpoints) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}${endpoint.url}`, {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    const data = await response.json();
+                    results.push({
+                        endpoint: `${endpoint.method} ${endpoint.url}`,
+                        status: response.status,
+                        success: response.ok,
+                        data: data
+                    });
+                } catch (error) {
+                    results.push({
+                        endpoint: `${endpoint.method} ${endpoint.url}`,
+                        status: 'ERROR',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            showResponse('Admin Endpoints Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        // Form functions
+        function showCreateCategoryForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Create Category</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="categoryTitle" class="form-control" placeholder="Category title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description:</label>
+                    <textarea id="categoryDescription" class="form-control" rows="3" placeholder="Category description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Image:</label>
+                    <input type="file" id="categoryImage" class="form-control" accept="image/*">
+                </div>
+                <button onclick="createCategory()" class="btn btn-success">Create Category</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        function showCreateWorkForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Create Work</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="workTitle" class="form-control" placeholder="Work title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description:</label>
+                    <textarea id="workDescription" class="form-control" rows="3" placeholder="Work description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category ID:</label>
+                    <input type="number" id="workCategoryId" class="form-control" placeholder="Category ID">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Main Image:</label>
+                    <input type="file" id="workMainImage" class="form-control" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Additional Images:</label>
+                    <input type="file" id="workAdditionalImages" class="form-control" accept="image/*" multiple>
+                </div>
+                <button onclick="createWork()" class="btn btn-success">Create Work</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        function showCreateTextForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Create Text</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="textTitle" class="form-control" placeholder="Text title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content:</label>
+                    <textarea id="textContent" class="form-control" rows="5" placeholder="Text content"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category:</label>
+                    <input type="text" id="textCategory" class="form-control" placeholder="Text category">
+                </div>
+                <button onclick="createText()" class="btn btn-success">Create Text</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        function showImageUploadForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Upload Image</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="imageTitle" class="form-control" placeholder="Image title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description:</label>
+                    <textarea id="imageDescription" class="form-control" rows="2" placeholder="Image description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category:</label>
+                    <input type="text" id="imageCategory" class="form-control" placeholder="Image category">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Image File:</label>
+                    <input type="file" id="imageFile" class="form-control" accept="image/*">
+                </div>
+                <button onclick="uploadImage()" class="btn btn-success">Upload Image</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        // Create functions
+        async function createCategory() {
+            const title = document.getElementById('categoryTitle').value;
+            const description = document.getElementById('categoryDescription').value;
+            const imageFile = document.getElementById('categoryImage').files[0];
+            
+            if (!title || !description) {
+                showResponse('Error', 'Title and description are required', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            
+            closeModal();
+            await testEndpoint('POST', '/api/categories', formData, true, true);
+        }
+
+        async function createWork() {
+            const title = document.getElementById('workTitle').value;
+            const description = document.getElementById('workDescription').value;
+            const categoryId = document.getElementById('workCategoryId').value;
+            const mainImage = document.getElementById('workMainImage').files[0];
+            const additionalImages = document.getElementById('workAdditionalImages').files;
+            
+            if (!title || !description || !categoryId || !mainImage) {
+                showResponse('Error', 'Title, description, category ID, and main image are required', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('categoryId', categoryId);
+            formData.append('mainImage', mainImage);
+            
+            for (let i = 0; i < additionalImages.length; i++) {
+                formData.append('additionalImages', additionalImages[i]);
+            }
+            
+            closeModal();
+            await testEndpoint('POST', '/api/works', formData, true, true);
+        }
+
+        async function createText() {
+            const title = document.getElementById('textTitle').value;
+            const content = document.getElementById('textContent').value;
+            const category = document.getElementById('textCategory').value;
+            
+            if (!title || !content) {
+                showResponse('Error', 'Title and content are required', 'error');
+                return;
+            }
+            
+            const body = { title, content };
+            if (category) body.category = category;
+            
+            closeModal();
+            await testEndpoint('POST', '/api/texts', body, true);
+        }
+
+        async function uploadImage() {
+            const title = document.getElementById('imageTitle').value;
+            const description = document.getElementById('imageDescription').value;
+            const category = document.getElementById('imageCategory').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            
+            if (!title || !imageFile) {
+                showResponse('Error', 'Title and image file are required', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('title', title);
+            if (description) formData.append('description', description);
+            if (category) formData.append('category', category);
+            formData.append('image', imageFile);
+            
+            closeModal();
+            await testEndpoint('POST', '/api/images', formData, true, true);
+        }
+
+        // Utility functions
+        function showResponse(title, content, type = 'success') {
+            const container = document.getElementById('responseContainer');
+            const titleEl = document.getElementById('responseTitle');
+            const contentEl = document.getElementById('responseContent');
+            
+            titleEl.textContent = title;
+            contentEl.textContent = content;
+            contentEl.className = `response-content ${type}`;
+            container.style.display = 'block';
+            
+            // Scroll to response
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearResponse() {
+            document.getElementById('responseContainer').style.display = 'none';
+        }
+
+        function clearAllResponses() {
+            clearResponse();
+            showResponse('Cleared', 'All responses cleared', 'success');
+            setTimeout(() => {
+                clearResponse();
+            }, 1000);
+        }
+
+        function showModal(content) {
+            document.getElementById('modalContent').innerHTML = content;
+            document.getElementById('modalOverlay').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        function exportResults() {
+            const responseContent = document.getElementById('responseContent').textContent;
+            if (!responseContent) {
+                showResponse('Export', 'No results to export', 'error');
+                return;
+            }
+            
+            const blob = new Blob([responseContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `api-test-results-${new Date().toISOString().slice(0, 19)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showResponse('Export', 'Results exported successfully', 'success');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Auto-detect API base URL
+        console.log('API Test Page Loaded');
+        console.log('Base URL:', apiBaseUrl);
+        console.log('Auth Token:', authToken ? 'Present' : 'Not set');
+    </script>
+</body>
+</html>

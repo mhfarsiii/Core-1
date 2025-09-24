@@ -1,36 +1,65 @@
 import { Router } from 'express';
 import { WorkController } from '../controllers/workController';
+import { WorkService } from '../services/workService';
 import { authMiddleware } from '../middlewares/auth';
-import { upload } from '../middlewares/upload';
+import { uploadFields } from '../middlewares/upload';
+import { ApiResponse } from '../types/interfaces';
 
 const router = Router();
-const workController = new WorkController();
+const workService = new WorkService();
+const workController = new WorkController(workService);
 
-// همه مسیرها نیاز به احراز هویت دارند
-router.use(authMiddleware);
+// API info endpoint (public)
+router.get('/info', (req, res) => {
+  const response: ApiResponse = {
+    message: 'Work API endpoints',
+    data: {
+      endpoints: {
+        'POST /': 'Create work (requires auth + file uploads)',
+        'GET /': 'Get all works (requires auth)',
+        'GET /:id': 'Get work by ID (requires auth)',
+        'GET /category/:categoryId': 'Get works by category (requires auth)',
+        'PUT /:id': 'Update work (requires auth + optional file uploads)',
+        'DELETE /:id': 'Delete work (requires auth)'
+      },
+      fileUpload: {
+        mainImage: 'Required for creation, optional for update (max 1 file)',
+        additionalImages: 'Optional (max 10 files)',
+        allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+        maxFileSize: '10MB per file'
+      },
+      version: '1.0.0',
+      authentication: 'Bearer token required for all endpoints except /info'
+    }
+  };
+  res.status(200).json(response);
+});
 
-// ایجاد کار جدید (POST)
-router.post('/', upload.fields([
+// All routes below require authentication
+router.use(authMiddleware as any);
+
+// Create new work (POST)
+router.post('/', uploadFields([
   { name: 'mainImage', maxCount: 1 },
   { name: 'additionalImages', maxCount: 10 }
-]), workController.createWork);
+]), (req: any, res) => workController.createWork(req, res));
 
-// دریافت همه کارها (GET)
-router.get('/', workController.getAllWorks);
+// Get all works (GET)
+router.get('/', (req, res) => workController.getAllWorks(req, res));
 
-// دریافت کار با شناسه (GET)
-router.get('/:id', workController.getWorkById);
+// Get work by ID (GET)
+router.get('/:id', (req, res) => workController.getWorkById(req, res));
 
-// دریافت کارها بر اساس دسته‌بندی (GET)
-router.get('/category/:categoryId', workController.getWorksByCategory);
+// Get works by category (GET)
+router.get('/category/:categoryId', (req, res) => workController.getWorksByCategory(req, res));
 
-// به‌روزرسانی کار (PUT)
-router.put('/:id', upload.fields([
+// Update work (PUT)
+router.put('/:id', uploadFields([
   { name: 'mainImage', maxCount: 1 },
   { name: 'additionalImages', maxCount: 10 }
-]), workController.updateWork);
+]), (req: any, res) => workController.updateWork(req, res));
 
-// حذف کار (DELETE)
-router.delete('/:id', workController.deleteWork);
+// Delete work (DELETE)
+router.delete('/:id', (req, res) => workController.deleteWork(req, res));
 
 export default router;

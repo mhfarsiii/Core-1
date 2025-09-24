@@ -1,52 +1,36 @@
 import { Request, Response } from 'express';
 import { WorkService } from '../services/workService';
-
-const workService = new WorkService();
-
-// Extend Request interface to include files
-interface RequestWithFiles extends Request {
-  files?: {
-    [fieldname: string]: Express.Multer.File[];
-  } | Express.Multer.File[];
-}
+import { RequestWithFiles, ApiResponse } from '../types/interfaces';
+import {
+  ValidationError,
+  NotFoundError,
+  DatabaseError
+} from '../types/errors';
 
 export class WorkController {
-  // ایجاد کار جدید (POST)
-  async createWork(req: RequestWithFiles, res: Response) {
+  private workService: WorkService;
+
+  constructor(workService?: WorkService) {
+    this.workService = workService || new WorkService();
+  }
+  async createWork(req: RequestWithFiles, res: Response): Promise<void> {
     try {
       const { title, description, categoryId, videoLink } = req.body;
-      
-      if (!title || !categoryId) {
-        return res.status(400).json({
-          success: false,
-          error: 'عنوان کار و شناسه دسته‌بندی الزامی است'
-        });
-      }
-
       const parsedCategoryId = parseInt(categoryId);
-      if (isNaN(parsedCategoryId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'شناسه دسته‌بندی نامعتبر است'
-        });
-      }
 
-      // دریافت فایل‌های آپلود شده
+      // Get uploaded files
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       const mainImage = files?.['mainImage']?.[0];
       const additionalImages = files?.['additionalImages'] || [];
 
       if (!mainImage) {
-        return res.status(400).json({
-          success: false,
-          error: 'تصویر اصلی کار الزامی است'
-        });
+        throw new ValidationError('Main image is required');
       }
 
       const mainImageUrl = `/uploads/${mainImage.filename}`;
       const additionalImageUrls = additionalImages?.map(img => `/uploads/${img.filename}`) || [];
 
-      const result = await workService.createWork({
+      const work = await this.workService.createWork({
         title,
         description,
         mainImageUrl,
@@ -55,110 +39,76 @@ export class WorkController {
         categoryId: parsedCategoryId
       });
 
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
+      const response: ApiResponse = {
+        message: 'Work created successfully',
+        data: work
+      };
 
-      res.status(201).json(result);
+      res.status(201).json(response);
     } catch (error) {
-      console.error('خطا در ایجاد کار:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطای داخلی سرور'
-      });
+      this.handleError(error, res);
     }
   }
 
-  // دریافت همه کارها (GET - برای پنل ادمین)
-  async getAllWorks(req: Request, res: Response) {
+  async getAllWorks(req: Request, res: Response): Promise<void> {
     try {
-      const result = await workService.getAllWorks();
+      const works = await this.workService.getAllWorks();
       
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
+      const response: ApiResponse = {
+        message: 'Works retrieved successfully',
+        data: works
+      };
 
-      res.json(result);
+      res.status(200).json(response);
     } catch (error) {
-      console.error('خطا در دریافت کارها:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطای داخلی سرور'
-      });
+      this.handleError(error, res);
     }
   }
 
-  // دریافت کار با شناسه (GET - برای پنل ادمین)
-  async getWorkById(req: Request, res: Response) {
+  async getWorkById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const workId = parseInt(id);
       
-      if (isNaN(workId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'شناسه کار نامعتبر است'
-        });
-      }
-
-      const result = await workService.getWorkById(workId);
+      const work = await this.workService.getWorkById(workId);
       
-      if (!result.success) {
-        return res.status(404).json(result);
+      if (!work) {
+        throw new NotFoundError('Work not found');
       }
 
-      res.json(result);
+      const response: ApiResponse = {
+        message: 'Work retrieved successfully',
+        data: work
+      };
+
+      res.status(200).json(response);
     } catch (error) {
-      console.error('خطا در دریافت کار:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطای داخلی سرور'
-      });
+      this.handleError(error, res);
     }
   }
 
-  // دریافت کارها بر اساس دسته‌بندی (GET - برای پنل ادمین)
-  async getWorksByCategory(req: Request, res: Response) {
+  async getWorksByCategory(req: Request, res: Response): Promise<void> {
     try {
       const { categoryId } = req.params;
       const parsedCategoryId = parseInt(categoryId);
       
-      if (isNaN(parsedCategoryId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'شناسه دسته‌بندی نامعتبر است'
-        });
-      }
-
-      const result = await workService.getWorksByCategory(parsedCategoryId);
+      const works = await this.workService.getWorksByCategory(parsedCategoryId);
       
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
+      const response: ApiResponse = {
+        message: 'Works retrieved successfully',
+        data: works
+      };
 
-      res.json(result);
+      res.status(200).json(response);
     } catch (error) {
-      console.error('خطا در دریافت کارها:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطای داخلی سرور'
-      });
+      this.handleError(error, res);
     }
   }
 
-  // به‌روزرسانی کار (PUT)
-  async updateWork(req: RequestWithFiles, res: Response) {
+  async updateWork(req: RequestWithFiles, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const workId = parseInt(id);
-      
-      if (isNaN(workId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'شناسه کار نامعتبر است'
-        });
-      }
-
       const { title, description, categoryId, videoLink } = req.body;
       
       const updateData: any = {};
@@ -168,16 +118,10 @@ export class WorkController {
       
       if (categoryId !== undefined) {
         const parsedCategoryId = parseInt(categoryId);
-        if (isNaN(parsedCategoryId)) {
-          return res.status(400).json({
-            success: false,
-            error: 'شناسه دسته‌بندی نامعتبر است'
-          });
-        }
         updateData.categoryId = parsedCategoryId;
       }
 
-      // دریافت فایل‌های آپلود شده
+      // Get uploaded files
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       const mainImage = files?.['mainImage']?.[0];
       const additionalImages = files?.['additionalImages'] || [];
@@ -190,48 +134,71 @@ export class WorkController {
         updateData.additionalImages = additionalImages.map(img => `/uploads/${img.filename}`);
       }
 
-      const result = await workService.updateWork(workId, updateData);
+      const work = await this.workService.updateWork(workId, updateData);
       
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
+      const response: ApiResponse = {
+        message: 'Work updated successfully',
+        data: work
+      };
 
-      res.json(result);
+      res.status(200).json(response);
     } catch (error) {
-      console.error('خطا در به‌روزرسانی کار:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطای داخلی سرور'
-      });
+      this.handleError(error, res);
     }
   }
 
-  // حذف کار (DELETE)
-  async deleteWork(req: Request, res: Response) {
+  async deleteWork(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const workId = parseInt(id);
       
-      if (isNaN(workId)) {
-        return res.status(400).json({
-          success: false,
-          error: 'شناسه کار نامعتبر است'
-        });
-      }
-
-      const result = await workService.deleteWork(workId);
+      await this.workService.deleteWork(workId);
       
-      if (!result.success) {
-        return res.status(400).json(result);
-      }
+      const response: ApiResponse = {
+        message: 'Work deleted successfully'
+      };
 
-      res.json(result);
+      res.status(200).json(response);
     } catch (error) {
-      console.error('خطا در حذف کار:', error);
-      res.status(500).json({
-        success: false,
-        error: 'خطای داخلی سرور'
-      });
+      this.handleError(error, res);
     }
+  }
+
+  private handleError(error: unknown, res: Response): void {
+    console.error('Controller error:', error);
+    
+    if (error instanceof ValidationError) {
+      const response: ApiResponse = {
+        message: 'Validation failed',
+        error: error.message
+      };
+      res.status(400).json(response);
+      return;
+    }
+    
+    if (error instanceof NotFoundError) {
+      const response: ApiResponse = {
+        message: 'Resource not found',
+        error: error.message
+      };
+      res.status(404).json(response);
+      return;
+    }
+    
+    if (error instanceof DatabaseError) {
+      const response: ApiResponse = {
+        message: 'Database operation failed',
+        error: 'An internal error occurred'
+      };
+      res.status(500).json(response);
+      return;
+    }
+    
+    // Unknown error
+    const response: ApiResponse = {
+      message: 'Internal server error',
+      error: 'An unexpected error occurred'
+    };
+    res.status(500).json(response);
   }
 }

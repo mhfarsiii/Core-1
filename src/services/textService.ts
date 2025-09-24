@@ -1,134 +1,232 @@
-import prisma from './prisma'
-import { Text } from '@prisma/client'
+import prisma from './prisma';
+import type { Text } from '@prisma/client';
+import {
+  CreateTextData,
+  UpdateTextData,
+  ITextService
+} from '../types/interfaces';
+import {
+  ValidationError,
+  NotFoundError,
+  DatabaseError
+} from '../types/errors';
+import { generateSlug, generateUniqueSlug } from '../utils/slug';
 
-export interface CreateTextData {
-  title: string
-  content: string
-  excerpt?: string
-  category?: string
-  published?: boolean
-}
-
-export interface UpdateTextData {
-  title?: string
-  content?: string
-  excerpt?: string
-  category?: string
-  published?: boolean
-}
-
-export class TextService {
-  async createText(data: CreateTextData) {
+export class TextService implements ITextService {
+  async createText(data: CreateTextData): Promise<Text> {
     try {
-      const text = await prisma.text.create({
-        data
-      });
+      // Input validation
+      if (!data.title || data.title.trim().length === 0) {
+        throw new ValidationError('Text title is required');
+      }
+
+      if (!data.content || data.content.trim().length === 0) {
+        throw new ValidationError('Text content is required');
+      }
+
+      const slug = generateSlug(data.title.trim());
       
-      return { success: true, data: text };
+      // Check if slug already exists
+      const existingTexts = await prisma.text.findMany({
+        select: { slug: true }
+      });
+      const existingSlugs = existingTexts.map((t: { slug: string }) => t.slug);
+      const uniqueSlug = generateUniqueSlug(slug, existingSlugs);
+
+      return await prisma.text.create({
+        data: {
+          title: data.title.trim(),
+          slug: uniqueSlug,
+          content: data.content.trim(),
+          excerpt: data.excerpt?.trim(),
+          category: data.category,
+          published: data.published || false,
+          publishedAt: data.published ? new Date() : null
+        }
+      });
     } catch (error) {
-      return { success: false, error: 'خطا در ایجاد متن' };
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to create text');
     }
   }
 
-  async getAllTexts() {
+  async getAllTexts(published?: boolean): Promise<Text[]> {
     try {
-      const texts = await prisma.text.findMany({
+      const where = published !== undefined ? { published } : {};
+      
+      return await prisma.text.findMany({
+        where,
         orderBy: {
           createdAt: 'desc'
         }
       });
-      
-      return { success: true, data: texts };
     } catch (error) {
-      return { success: false, error: 'خطا در دریافت متون' };
+      throw new DatabaseError('Failed to fetch texts');
     }
   }
 
-  async getPublishedTexts() {
+  async getTextById(id: string): Promise<Text | null> {
     try {
-      const texts = await prisma.text.findMany({
-        where: { published: true },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
-      
-      return { success: true, data: texts };
-    } catch (error) {
-      return { success: false, error: 'خطا در دریافت متون منتشر شده' };
-    }
-  }
+      if (!id) {
+        throw new ValidationError('Text ID is required');
+      }
 
-  async getTextsByCategory(category: string) {
-    try {
-      const texts = await prisma.text.findMany({
-        where: { category, published: true },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      });
-      
-      return { success: true, data: texts };
-    } catch (error) {
-      return { success: false, error: 'خطا در دریافت متون' };
-    }
-  }
-
-  async updateText(id: string, data: UpdateTextData) {
-    try {
-      const text = await prisma.text.update({
-        where: { id },
-        data
-      });
-      
-      return { success: true, data: text };
-    } catch (error) {
-      return { success: false, error: 'خطا در به‌روزرسانی متن' };
-    }
-  }
-
-  async deleteText(id: string) {
-    try {
-      await prisma.text.delete({
+      return await prisma.text.findUnique({
         where: { id }
       });
-      return { success: true, message: 'متن با موفقیت حذف شد' };
     } catch (error) {
-      return { success: false, error: 'خطا در حذف متن' };
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to fetch text');
     }
   }
 
-  async getTextById(id: string) {
+  async updateText(id: string, data: UpdateTextData): Promise<Text> {
     try {
+      if (!id) {
+        throw new ValidationError('Text ID is required');
+      }
+
+      // Check if text exists
+      const existingText = await prisma.text.findUnique({
+        where: { id }
+      });
+
+      if (!existingText) {
+        throw new NotFoundError('Text not found');
+      }
+
+      const updateData: any = {};
+      
+      if (data.title !== undefined) {
+        if (data.title.trim().length === 0) {
+          throw new ValidationError('Text title cannot be empty');
+        }
+        updateData.title = data.title.trim();
+        
+        // Generate new slug if title is changing
+        if (data.title.trim() !== existingText.title) {
+          const slug = generateSlug(data.title.trim());
+        const existingTexts = await prisma.text.findMany({
+          where: { id: { not: id } },
+          select: { slug: true }
+        });
+        const existingSlugs = existingTexts.map((t: { slug: string }) => t.slug);
+          updateData.slug = generateUniqueSlug(slug, existingSlugs);
+        }
+      }
+      
+      if (data.content !== undefined) {
+        if (data.content.trim().length === 0) {
+          throw new ValidationError('Text content cannot be empty');
+        }
+        updateData.content = data.content.trim();
+      }
+      
+      if (data.excerpt !== undefined) {
+        updateData.excerpt = data.excerpt?.trim();
+      }
+      
+      if (data.category !== undefined) {
+        updateData.category = data.category;
+      }
+      
+      if (data.published !== undefined) {
+        updateData.published = data.published;
+        // Set publishedAt when publishing
+        if (data.published && !existingText.published) {
+          updateData.publishedAt = new Date();
+        }
+      }
+
+      return await prisma.text.update({
+        where: { id },
+        data: updateData
+      });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to update text');
+    }
+  }
+
+  async deleteText(id: string): Promise<void> {
+    try {
+      if (!id) {
+        throw new ValidationError('Text ID is required');
+      }
+
+      // Check if text exists
       const text = await prisma.text.findUnique({
         where: { id }
       });
-      
+
       if (!text) {
-        return { success: false, error: 'متن یافت نشد' };
+        throw new NotFoundError('Text not found');
       }
-      
-      return { success: true, data: text };
+
+      await prisma.text.delete({
+        where: { id }
+      });
     } catch (error) {
-      return { success: false, error: 'خطا در دریافت متن' };
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to delete text');
     }
   }
 
-  async togglePublish(id: string) {
+  async publishText(id: string): Promise<Text> {
     try {
+      if (!id) {
+        throw new ValidationError('Text ID is required');
+      }
+
       const text = await prisma.text.findUnique({ where: { id } });
       if (!text) {
-        return { success: false, error: 'متن یافت نشد' };
+        throw new NotFoundError('Text not found');
       }
       
-      const updatedText = await prisma.text.update({
+      return await prisma.text.update({
         where: { id },
-        data: { published: !text.published }
+        data: { 
+          published: true,
+          publishedAt: new Date()
+        }
       });
-      
-      return { success: true, data: updatedText };
     } catch (error) {
-      return { success: false, error: 'خطا در تغییر وضعیت انتشار' };
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to publish text');
     }
   }
+
+  async unpublishText(id: string): Promise<Text> {
+    try {
+      if (!id) {
+        throw new ValidationError('Text ID is required');
+      }
+
+      const text = await prisma.text.findUnique({ where: { id } });
+      if (!text) {
+        throw new NotFoundError('Text not found');
+      }
+      
+      return await prisma.text.update({
+        where: { id },
+        data: { published: false }
+      });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      throw new DatabaseError('Failed to unpublish text');
+    }
+  }
+
 } 

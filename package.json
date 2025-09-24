@@ -13,7 +13,16 @@
     "db:studio": "prisma studio",
     "db:seed": "node dist/scripts/seed.js",
     "db:reset": "prisma migrate reset --force && npm run db:seed",
+    "mysql:setup": "./setup-mysql.sh",
+    "mysql:stop": "./stop-mysql.sh",
+    "mysql:shell": "./mysql-shell.sh",
+    "mysql:logs": "docker logs portfolio_mysql",
+    "docker:fix": "./fix-docker-permissions.sh",
+    "check:setup": "./check-setup.sh",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:setup": "./setup-test-db.sh",
+    "test:api": "node test-complete-api.js",
+    "test:all": "npm run test:setup && npm run build && npm run start & sleep 5 && npm run test:api && kill $!",
     "postinstall": "prisma generate"
   },
   "engines": {
@@ -25,9 +34,11 @@
   "dependencies": {
     "@prisma/client": "^5.10.0",
     "bcrypt": "^5.1.1",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
     "prisma": "^5.10.0"
@@ -35,11 +46,15 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/bun": "latest",
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/helmet": "^0.0.48",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^2.0.0",
     "@types/node": "^20.12.7",
+    "axios": "^1.12.2",
+    "form-data": "^4.0.4",
     "nodemon": "^3.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"

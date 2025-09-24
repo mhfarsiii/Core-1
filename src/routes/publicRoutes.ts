@@ -1,111 +1,129 @@
 import { Router } from 'express';
 import { CategoryService } from '../services/categoryService';
 import { WorkService } from '../services/workService';
+import { ApiResponse } from '../types/interfaces';
 
 const router = Router();
 const categoryService = new CategoryService();
 const workService = new WorkService();
 
-// دریافت همه دسته‌بندی‌ها برای نمایش در وب‌سایت (GET)
+// Get all categories for website display (GET)
 router.get('/categories', async (req, res) => {
   try {
-    const result = await categoryService.getAllCategories();
+    const categories = await categoryService.getAllCategories();
     
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
+    const response: ApiResponse = {
+      message: 'Categories retrieved successfully',
+      data: categories
+    };
 
-    res.json(result);
+    res.status(200).json(response);
   } catch (error) {
-    console.error('خطا در دریافت دسته‌بندی‌ها:', error);
-    res.status(500).json({
-      success: false,
-      error: 'خطای داخلی سرور'
-    });
+    console.error('Error fetching categories:', error);
+    const response: ApiResponse = {
+      message: 'Failed to fetch categories',
+      error: 'Internal server error'
+    };
+    res.status(500).json(response);
   }
 });
 
-// دریافت کارها بر اساس دسته‌بندی برای نمایش در وب‌سایت (GET)
+// Get works by category for website display (GET)
 router.get('/categories/:categoryId/works', async (req, res) => {
   try {
     const { categoryId } = req.params;
     const parsedCategoryId = parseInt(categoryId);
     
     if (isNaN(parsedCategoryId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'شناسه دسته‌بندی نامعتبر است'
-      });
+      const response: ApiResponse = {
+        message: 'Validation failed',
+        error: 'Invalid category ID'
+      };
+      return res.status(400).json(response);
     }
 
-    const result = await workService.getWorksByCategory(parsedCategoryId);
+    const works = await workService.getWorksByCategory(parsedCategoryId);
     
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
+    const response: ApiResponse = {
+      message: 'Works retrieved successfully',
+      data: works
+    };
 
-    res.json(result);
+    res.status(200).json(response);
   } catch (error) {
-    console.error('خطا در دریافت کارها:', error);
-    res.status(500).json({
-      success: false,
-      error: 'خطای داخلی سرور'
-    });
+    console.error('Error fetching works:', error);
+    const response: ApiResponse = {
+      message: 'Failed to fetch works',
+      error: 'Internal server error'
+    };
+    res.status(500).json(response);
   }
 });
 
-// دریافت جزئیات کار برای نمایش در وب‌سایت (GET)
+// Get work details for website display (GET)
 router.get('/works/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const workId = parseInt(id);
     
     if (isNaN(workId)) {
-      return res.status(400).json({
-        success: false,
-        error: 'شناسه کار نامعتبر است'
-      });
+      const response: ApiResponse = {
+        message: 'Validation failed',
+        error: 'Invalid work ID'
+      };
+      return res.status(400).json(response);
     }
 
-    const result = await workService.getWorkById(workId);
+    const work = await workService.getWorkById(workId);
     
-    if (!result.success) {
-      return res.status(404).json(result);
+    if (!work) {
+      const response: ApiResponse = {
+        message: 'Resource not found',
+        error: 'Work not found'
+      };
+      return res.status(404).json(response);
     }
 
-    // دریافت کارهای مشابه
-    const similarWorksResult = await workService.getSimilarWorks(workId, 4);
-    const similarWorks = similarWorksResult.success ? similarWorksResult.data : [];
+    // Get similar works
+    const similarWorks = await workService.getSimilarWorks(workId, 4);
 
-    res.json({
-      ...result,
-      similarWorks
-    });
+    const response: ApiResponse = {
+      message: 'Work retrieved successfully',
+      data: {
+        work,
+        similarWorks
+      }
+    };
+
+    res.status(200).json(response);
   } catch (error) {
-    console.error('خطا در دریافت کار:', error);
-    res.status(500).json({
-      success: false,
-      error: 'خطای داخلی سرور'
-    });
+    console.error('Error fetching work:', error);
+    const response: ApiResponse = {
+      message: 'Failed to fetch work',
+      error: 'Internal server error'
+    };
+    res.status(500).json(response);
   }
 });
 
-// دریافت همه کارها برای نمایش در وب‌سایت (GET)
+// Get all works for website display (GET)
 router.get('/works', async (req, res) => {
   try {
-    const result = await workService.getAllWorks();
+    const works = await workService.getAllWorks();
     
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
+    const response: ApiResponse = {
+      message: 'Works retrieved successfully',
+      data: works
+    };
 
-    res.json(result);
+    res.status(200).json(response);
   } catch (error) {
-    console.error('خطا در دریافت کارها:', error);
-    res.status(500).json({
-      success: false,
-      error: 'خطای داخلی سرور'
-    });
+    console.error('Error fetching works:', error);
+    const response: ApiResponse = {
+      message: 'Failed to fetch works',
+      error: 'Internal server error'
+    };
+    res.status(500).json(response);
   }
 });
 

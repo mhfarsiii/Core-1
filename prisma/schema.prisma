@@ -1,9 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  // Generate types for better TypeScript support
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -12,54 +14,108 @@ model Admin {
   username     String   @unique
   passwordHash String
   email        String   @unique
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  
+  @@map("admins")
+  @@index([email])
+  @@index([username])
 }
 
 model Category {
   id          Int      @id @default(autoincrement())
   title       String   @unique
-  imageUrl    String?  // تصویر دسته‌بندی
-  description String?  // توضیحات دسته‌بندی
+  slug        String   @unique // URL-friendly version of title
+  imageUrl    String? // Category image
+  description String? // Category description
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0) // For custom ordering
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  // رابطه با کارها
+  // Relations
   works       Work[]
+  
+  @@map("categories")
+  @@index([isActive])
+  @@index([sortOrder])
+  @@index([slug])
 }
 
 model Work {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?  // توضیحات کار
-  mainImageUrl String  // تصویر اصلی کار
-  additionalImages Json? // تصاویر اضافی (JSON array)
-  videoLink   String?  // لینک ویدیو (اختیاری)
-  categoryId  Int      // شناسه دسته‌بندی
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  title            String
+  slug             String   @unique // URL-friendly version of title
+  description      String? // Work description
+  mainImageUrl     String // Main work image
+  additionalImages String? // Additional images (JSON array)
+  videoLink        String? // Video link (optional)
+  tags             String? // Tags for better categorization
+  isPublished      Boolean  @default(true)
+  isFeatured       Boolean  @default(false) // For highlighting important works
+  viewCount        Int      @default(0) // Track popularity
+  sortOrder        Int      @default(0) // For custom ordering
+  categoryId       Int      // Category foreign key
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
-  // رابطه با دسته‌بندی
-  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Relations
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@map("works")
+  @@index([categoryId])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([slug])
+  @@index([sortOrder])
+  @@index([createdAt])
 }
 
 model Image {
   id          String   @id @default(cuid())
   url         String
   title       String
-  description String?  // توضیحات عکس
-  category    String?  // دسته‌بندی (مثل: طراحی، عکاسی، کد)
+  description String? // Image description
+  altText     String? // Alt text for accessibility
+  category    String? // Category (e.g., design, photography, code)
+  tags        String? // Tags for better organization
+  fileSize    Int?     // File size in bytes
+  mimeType    String? // MIME type
+  width       Int?     // Image width in pixels
+  height      Int?     // Image height in pixels
+  isPublic    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  @@map("images")
+  @@index([category])
+  @@index([isPublic])
+  @@index([createdAt])
 }
 
 model Text {
-  id        String   @id @default(cuid())
-  title     String
-  content   String   @db.LongText
-  excerpt   String?  // خلاصه متن
-  category  String?  // دسته‌بندی (مثل: وبلاگ، پروژه، درباره)
-  published Boolean  @default(false) // آیا منتشر شده یا نه
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique // URL-friendly version of title
+  content     String
+  excerpt     String? // Text summary
+  category    String? // Category (e.g., blog, project, about)
+  tags        String? // Tags for better categorization
+  published   Boolean  @default(false) // Whether published or not
+  publishedAt DateTime? // When it was published
+  viewCount   Int      @default(0) // Track popularity
+  sortOrder   Int      @default(0) // For custom ordering
+  metaTitle   String? // SEO meta title
+  metaDescription String? // SEO meta description
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("texts")
+  @@index([published])
+  @@index([category])
+  @@index([slug])
+  @@index([publishedAt])
+  @@index([createdAt])
 } 

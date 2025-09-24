@@ -1,70 +1,122 @@
-import { Request, Response } from 'express'
-import { AdminService } from '../services/adminService'
-
-const adminService = new AdminService()
+import { Request, Response } from 'express';
+import { AdminService } from '../services/adminService';
+import { AuthenticatedRequest, ApiResponse, AdminProfile } from '../types/interfaces';
+import {
+  ValidationError,
+  AuthenticationError,
+  DatabaseError,
+  NotFoundError
+} from '../types/errors';
 
 export class AdminController {
-  async login(req: Request, res: Response) {
-    try {
-      const { username, password } = req.body
-      
-      if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required' })
-      }
+  private adminService: AdminService;
 
-      const result = await adminService.login({ username, password })
+  constructor(adminService?: AdminService) {
+    this.adminService = adminService || new AdminService();
+  }
+  async login(req: Request, res: Response): Promise<void> {
+    try {
+      const { username, password } = req.body;
       
-      res.json({
+      const result = await this.adminService.login({ username, password });
+      
+      const response: ApiResponse = {
         message: 'Login successful',
-        ...result
-      })
+        data: result
+      };
+      
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Login error:', error)
-      res.status(401).json({ error: 'Invalid credentials' })
+      this.handleError(error, res);
     }
   }
 
-  async createAdmin(req: Request, res: Response) {
+  async createAdmin(req: Request, res: Response): Promise<void> {
     try {
-      const { username, password, email } = req.body
+      const { username, password, email } = req.body;
       
-      if (!username || !password || !email) {
-        return res.status(400).json({ error: 'Username, password and email are required' })
-      }
-
-      const admin = await adminService.createAdmin({ username, password, email })
+      const admin = await this.adminService.createAdmin({ username, password, email });
       
-      res.status(201).json({
+      const response: ApiResponse = {
         message: 'Admin created successfully',
-        admin: {
+        data: {
           id: admin.id,
           username: admin.username,
-          email: admin.email
+          email: admin.email,
+          createdAt: admin.createdAt
         }
-      })
+      };
+      
+      res.status(201).json(response);
     } catch (error) {
-      console.error('Error creating admin:', error)
-      res.status(500).json({ error: 'Failed to create admin' })
+      this.handleError(error, res);
     }
   }
 
-  async getProfile(req: Request, res: Response) {
+  async getProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const token = req.headers.authorization?.replace('Bearer ', '')
+      // Admin profile is already available from auth middleware
+      const admin = req.admin;
       
-      if (!token) {
-        return res.status(401).json({ error: 'No token provided' })
+      if (!admin) {
+        throw new AuthenticationError('No authenticated admin found');
       }
-
-      const admin = await adminService.verifyToken(token)
       
-      res.json({
+      const response: ApiResponse<AdminProfile> = {
         message: 'Profile retrieved successfully',
-        admin
-      })
+        data: admin
+      };
+      
+      res.status(200).json(response);
     } catch (error) {
-      console.error('Error getting profile:', error)
-      res.status(401).json({ error: 'Invalid token' })
+      this.handleError(error, res);
     }
+  }
+
+  private handleError(error: unknown, res: Response): void {
+    console.error('Controller error:', error);
+    
+    if (error instanceof ValidationError) {
+      const response: ApiResponse = {
+        message: 'Validation failed',
+        error: error.message
+      };
+      res.status(400).json(response);
+      return;
+    }
+    
+    if (error instanceof AuthenticationError) {
+      const response: ApiResponse = {
+        message: 'Authentication failed',
+        error: error.message
+      };
+      res.status(401).json(response);
+      return;
+    }
+    
+    if (error instanceof NotFoundError) {
+      const response: ApiResponse = {
+        message: 'Resource not found',
+        error: error.message
+      };
+      res.status(404).json(response);
+      return;
+    }
+    
+    if (error instanceof DatabaseError) {
+      const response: ApiResponse = {
+        message: 'Database operation failed',
+        error: 'An internal error occurred'
+      };
+      res.status(500).json(response);
+      return;
+    }
+    
+    // Unknown error
+    const response: ApiResponse = {
+      message: 'Internal server error',
+      error: 'An unexpected error occurred'
+    };
+    res.status(500).json(response);
   }
 } 
