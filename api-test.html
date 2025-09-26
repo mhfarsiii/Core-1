@@ -397,8 +397,42 @@
             <div class="quick-actions">
                 <button onclick="testAllPublicEndpoints()" class="btn btn-success">Test All Public APIs</button>
                 <button onclick="testAllAdminEndpoints()" class="btn btn-warning">Test All Admin APIs</button>
+                <button onclick="testAllCRUDOperations()" class="btn btn-primary">Test All CRUD Operations</button>
+                <button onclick="showPaginationTestForm()" class="btn btn-primary">Test Pagination</button>
                 <button onclick="clearAllResponses()" class="btn btn-secondary">Clear All Responses</button>
                 <button onclick="exportResults()" class="btn btn-primary">Export Results</button>
+            </div>
+
+            <!-- Advanced Testing Panel -->
+            <div class="section" style="border: 2px dashed #007bff;">
+                <div class="section-header">
+                    <h2 class="section-title">🧪 Advanced Testing Tools</h2>
+                    <span class="section-badge" style="background: #e3f2fd; color: #1976d2;">Enhanced Features</span>
+                </div>
+                <div class="section-content">
+                    <div class="grid">
+                        <div>
+                            <h4>Bulk Testing</h4>
+                            <p>Test multiple endpoints or operations in sequence</p>
+                            <button onclick="runBulkTests()" class="btn btn-primary">Run Bulk Tests</button>
+                        </div>
+                        <div>
+                            <h4>Response Validation</h4>
+                            <p>Validate API responses against expected schemas</p>
+                            <button onclick="validateResponses()" class="btn btn-primary">Validate Responses</button>
+                        </div>
+                        <div>
+                            <h4>Performance Testing</h4>
+                            <p>Measure API response times and performance</p>
+                            <button onclick="runPerformanceTests()" class="btn btn-primary">Performance Test</button>
+                        </div>
+                        <div>
+                            <h4>Error Scenario Testing</h4>
+                            <p>Test error handling with invalid inputs</p>
+                            <button onclick="testErrorScenarios()" class="btn btn-primary">Test Error Scenarios</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Public Endpoints -->
@@ -533,9 +567,27 @@
                             <button onclick="testEndpoint('GET', '/api/categories', null, true)" class="btn btn-primary">Test</button>
                         </div>
                         <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/categories/{id}</span>
+                            <input type="number" id="getCategoryIdInput" placeholder="Category ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testGetCategoryById()" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
                             <span class="method-badge method-post">POST</span>
                             <span class="endpoint-url">/api/categories</span>
                             <button onclick="showCreateCategoryForm()" class="btn btn-success">Create</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-put">PUT</span>
+                            <span class="endpoint-url">/api/categories/{id}</span>
+                            <input type="number" id="updateCategoryIdInput" placeholder="Category ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="showUpdateCategoryForm()" class="btn btn-warning">Update</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-delete">DELETE</span>
+                            <span class="endpoint-url">/api/categories/{id}</span>
+                            <input type="number" id="deleteCategoryIdInput" placeholder="Category ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="deleteCategoryById()" class="btn btn-danger">Delete</button>
                         </div>
                     </div>
 
@@ -553,9 +605,33 @@
                             <button onclick="testEndpoint('GET', '/api/works', null, true)" class="btn btn-primary">Test</button>
                         </div>
                         <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/works/{id}</span>
+                            <input type="number" id="getWorkIdInput" placeholder="Work ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testGetWorkById()" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-get">GET</span>
+                            <span class="endpoint-url">/api/works/category/{categoryId}</span>
+                            <input type="number" id="worksByCategoryIdInput" placeholder="Category ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="testWorksByCategory()" class="btn btn-primary">Test</button>
+                        </div>
+                        <div class="endpoint-item">
                             <span class="method-badge method-post">POST</span>
                             <span class="endpoint-url">/api/works</span>
                             <button onclick="showCreateWorkForm()" class="btn btn-success">Create</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-put">PUT</span>
+                            <span class="endpoint-url">/api/works/{id}</span>
+                            <input type="number" id="updateWorkIdInput" placeholder="Work ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="showUpdateWorkForm()" class="btn btn-warning">Update</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-delete">DELETE</span>
+                            <span class="endpoint-url">/api/works/{id}</span>
+                            <input type="number" id="deleteWorkIdInput" placeholder="Work ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="deleteWorkById()" class="btn btn-danger">Delete</button>
                         </div>
                     </div>
 
@@ -577,6 +653,30 @@
                             <span class="endpoint-url">/api/texts</span>
                             <button onclick="showCreateTextForm()" class="btn btn-success">Create</button>
                         </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-put">PUT</span>
+                            <span class="endpoint-url">/api/texts/{id}</span>
+                            <input type="number" id="updateTextIdInput" placeholder="Text ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="showUpdateTextForm()" class="btn btn-warning">Update</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-delete">DELETE</span>
+                            <span class="endpoint-url">/api/texts/{id}</span>
+                            <input type="number" id="deleteTextIdInput" placeholder="Text ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="deleteTextById()" class="btn btn-danger">Delete</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-patch">PATCH</span>
+                            <span class="endpoint-url">/api/texts/{id}/publish</span>
+                            <input type="number" id="publishTextIdInput" placeholder="Text ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="publishTextById()" class="btn btn-success">Publish</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-patch">PATCH</span>
+                            <span class="endpoint-url">/api/texts/{id}/unpublish</span>
+                            <input type="number" id="unpublishTextIdInput" placeholder="Text ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="unpublishTextById()" class="btn btn-warning">Unpublish</button>
+                        </div>
                     </div>
 
                     <!-- Images Management -->
@@ -587,6 +687,115 @@
                             <span class="endpoint-url">/api/images</span>
                             <button onclick="showImageUploadForm()" class="btn btn-success">Upload</button>
                         </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-put">PUT</span>
+                            <span class="endpoint-url">/api/images/{id}</span>
+                            <input type="number" id="updateImageIdInput" placeholder="Image ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="showUpdateImageForm()" class="btn btn-warning">Update</button>
+                        </div>
+                        <div class="endpoint-item">
+                            <span class="method-badge method-delete">DELETE</span>
+                            <span class="endpoint-url">/api/images/{id}</span>
+                            <input type="number" id="deleteImageIdInput" placeholder="Image ID" value="1" style="width: 100px; padding: 5px; margin: 0 10px;">
+                            <button onclick="deleteImageById()" class="btn btn-danger">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Documentation -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📚 API Documentation</h2>
+                    <span class="section-badge" style="background: #f3e5f5; color: #7b1fa2;">Reference Guide</span>
+                </div>
+                <div class="section-content">
+                    <div class="grid">
+                        <div>
+                            <h4>🔗 Base URLs</h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li><strong>Development:</strong> <code>http://localhost:3001</code></li>
+                                <li><strong>Production:</strong> <code>https://api.hamedaei.com</code></li>
+                                <li><strong>Direct IP:</strong> Use <code>/api/</code> prefix</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>🔐 Authentication</h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li><strong>Type:</strong> Bearer Token (JWT)</li>
+                                <li><strong>Header:</strong> <code>Authorization: Bearer {token}</code></li>
+                                <li><strong>Login:</strong> <code>POST /api/admin/login</code></li>
+                                <li><strong>Token Duration:</strong> 24 hours</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>📊 Response Format</h4>
+                            <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 0.8rem;">{
+  "message": "string",
+  "data": "any",
+  "error": "string (optional)",
+  "meta": {
+    "page": "number",
+    "limit": "number", 
+    "total": "number"
+  }
+}</pre>
+                        </div>
+                        <div>
+                            <h4>📁 File Upload</h4>
+                            <ul style="list-style-type: none; padding-left: 0;">
+                                <li><strong>Max Size:</strong> 10MB per file</li>
+                                <li><strong>Types:</strong> JPEG, PNG, GIF, WebP</li>
+                                <li><strong>Field Names:</strong> <code>image</code>, <code>mainImage</code>, <code>additionalImages</code></li>
+                                <li><strong>Multiple Files:</strong> Supported for works</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 30px;">
+                        <h4>🚀 Quick Start Guide</h4>
+                        <ol>
+                            <li><strong>Authentication:</strong> Click "Create Admin" to set up an admin account, then "Login"</li>
+                            <li><strong>Test Public APIs:</strong> Use the green "Test All Public APIs" button to verify public endpoints</li>
+                            <li><strong>Test Admin APIs:</strong> After login, use "Test All Admin APIs" to verify authenticated endpoints</li>
+                            <li><strong>CRUD Operations:</strong> Use the "Test All CRUD Operations" for comprehensive testing</li>
+                            <li><strong>Create Content:</strong> Use the "Create" buttons to add categories, works, texts, and images</li>
+                            <li><strong>Advanced Testing:</strong> Use the advanced tools for pagination, performance, and error testing</li>
+                        </ol>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <h4>🔄 HTTP Status Codes</h4>
+                        <div class="grid">
+                            <div>
+                                <h5>✅ Success Codes</h5>
+                                <ul style="list-style-type: none; padding-left: 0;">
+                                    <li><span class="method-badge method-get" style="font-size: 0.7rem;">200</span> OK - Request successful</li>
+                                    <li><span class="method-badge method-post" style="font-size: 0.7rem;">201</span> Created - Resource created</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h5>❌ Error Codes</h5>
+                                <ul style="list-style-type: none; padding-left: 0;">
+                                    <li><span class="method-badge method-put" style="font-size: 0.7rem;">400</span> Bad Request - Invalid input</li>
+                                    <li><span class="method-badge method-delete" style="font-size: 0.7rem;">401</span> Unauthorized - Auth required</li>
+                                    <li><span class="method-badge method-patch" style="font-size: 0.7rem;">404</span> Not Found - Resource missing</li>
+                                    <li><span class="method-badge method-delete" style="font-size: 0.7rem;">500</span> Server Error - Internal error</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <h4>💡 Testing Tips</h4>
+                        <ul>
+                            <li><strong>Start with Health Check:</strong> Test <code>/health</code> endpoint first</li>
+                            <li><strong>Create Before Update:</strong> Create resources before testing update/delete operations</li>
+                            <li><strong>Check Response Times:</strong> Use performance testing for optimization insights</li>
+                            <li><strong>Test Error Scenarios:</strong> Verify proper error handling with invalid inputs</li>
+                            <li><strong>Export Results:</strong> Save test results for documentation or debugging</li>
+                            <li><strong>Pagination Testing:</strong> Test with different page sizes and limits</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -798,6 +1007,100 @@
             testEndpoint('GET', `/api/images/${imageId}`);
         }
 
+        // New test functions for missing endpoints
+        function testGetCategoryById() {
+            const categoryId = document.getElementById('getCategoryIdInput').value;
+            if (!categoryId) {
+                showResponse('Error', 'Please enter a category ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/categories/${categoryId}`, null, true);
+        }
+
+        function deleteCategoryById() {
+            const categoryId = document.getElementById('deleteCategoryIdInput').value;
+            if (!categoryId) {
+                showResponse('Error', 'Please enter a category ID', 'error');
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete category ${categoryId}?`)) {
+                return;
+            }
+            testEndpoint('DELETE', `/api/categories/${categoryId}`, null, true);
+        }
+
+        function testGetWorkById() {
+            const workId = document.getElementById('getWorkIdInput').value;
+            if (!workId) {
+                showResponse('Error', 'Please enter a work ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/works/${workId}`, null, true);
+        }
+
+        function testWorksByCategory() {
+            const categoryId = document.getElementById('worksByCategoryIdInput').value;
+            if (!categoryId) {
+                showResponse('Error', 'Please enter a category ID', 'error');
+                return;
+            }
+            testEndpoint('GET', `/api/works/category/${categoryId}`, null, true);
+        }
+
+        function deleteWorkById() {
+            const workId = document.getElementById('deleteWorkIdInput').value;
+            if (!workId) {
+                showResponse('Error', 'Please enter a work ID', 'error');
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete work ${workId}?`)) {
+                return;
+            }
+            testEndpoint('DELETE', `/api/works/${workId}`, null, true);
+        }
+
+        function deleteTextById() {
+            const textId = document.getElementById('deleteTextIdInput').value;
+            if (!textId) {
+                showResponse('Error', 'Please enter a text ID', 'error');
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete text ${textId}?`)) {
+                return;
+            }
+            testEndpoint('DELETE', `/api/texts/${textId}`, null, true);
+        }
+
+        function publishTextById() {
+            const textId = document.getElementById('publishTextIdInput').value;
+            if (!textId) {
+                showResponse('Error', 'Please enter a text ID', 'error');
+                return;
+            }
+            testEndpoint('PATCH', `/api/texts/${textId}/publish`, null, true);
+        }
+
+        function unpublishTextById() {
+            const textId = document.getElementById('unpublishTextIdInput').value;
+            if (!textId) {
+                showResponse('Error', 'Please enter a text ID', 'error');
+                return;
+            }
+            testEndpoint('PATCH', `/api/texts/${textId}/unpublish`, null, true);
+        }
+
+        function deleteImageById() {
+            const imageId = document.getElementById('deleteImageIdInput').value;
+            if (!imageId) {
+                showResponse('Error', 'Please enter an image ID', 'error');
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete image ${imageId}?`)) {
+                return;
+            }
+            testEndpoint('DELETE', `/api/images/${imageId}`, null, true);
+        }
+
         // Batch testing functions
         async function testAllPublicEndpoints() {
             showResponse('Batch Test', 'Testing all public endpoints...', 'loading');
@@ -1001,6 +1304,143 @@
             showModal(formHtml);
         }
 
+        // Update form functions
+        function showUpdateCategoryForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const categoryId = document.getElementById('updateCategoryIdInput').value;
+            if (!categoryId) {
+                showResponse('Error', 'Please enter a category ID', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Update Category #${categoryId}</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="updateCategoryTitle" class="form-control" placeholder="Category title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description:</label>
+                    <textarea id="updateCategoryDescription" class="form-control" rows="3" placeholder="Category description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Image (optional):</label>
+                    <input type="file" id="updateCategoryImage" class="form-control" accept="image/*">
+                </div>
+                <button onclick="updateCategory()" class="btn btn-warning">Update Category</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        function showUpdateWorkForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const workId = document.getElementById('updateWorkIdInput').value;
+            if (!workId) {
+                showResponse('Error', 'Please enter a work ID', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Update Work #${workId}</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="updateWorkTitle" class="form-control" placeholder="Work title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description:</label>
+                    <textarea id="updateWorkDescription" class="form-control" rows="3" placeholder="Work description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category ID:</label>
+                    <input type="number" id="updateWorkCategoryId" class="form-control" placeholder="Category ID">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Main Image (optional):</label>
+                    <input type="file" id="updateWorkMainImage" class="form-control" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Additional Images (optional):</label>
+                    <input type="file" id="updateWorkAdditionalImages" class="form-control" accept="image/*" multiple>
+                </div>
+                <button onclick="updateWork()" class="btn btn-warning">Update Work</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        function showUpdateTextForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const textId = document.getElementById('updateTextIdInput').value;
+            if (!textId) {
+                showResponse('Error', 'Please enter a text ID', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Update Text #${textId}</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="updateTextTitle" class="form-control" placeholder="Text title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Content:</label>
+                    <textarea id="updateTextContent" class="form-control" rows="5" placeholder="Text content"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category:</label>
+                    <input type="text" id="updateTextCategory" class="form-control" placeholder="Text category">
+                </div>
+                <button onclick="updateText()" class="btn btn-warning">Update Text</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        function showUpdateImageForm() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first', 'error');
+                return;
+            }
+            
+            const imageId = document.getElementById('updateImageIdInput').value;
+            if (!imageId) {
+                showResponse('Error', 'Please enter an image ID', 'error');
+                return;
+            }
+            
+            const formHtml = `
+                <h3>Update Image #${imageId}</h3>
+                <div class="form-group">
+                    <label class="form-label">Title:</label>
+                    <input type="text" id="updateImageTitle" class="form-control" placeholder="Image title">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description:</label>
+                    <textarea id="updateImageDescription" class="form-control" rows="2" placeholder="Image description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category:</label>
+                    <input type="text" id="updateImageCategory" class="form-control" placeholder="Image category">
+                </div>
+                <button onclick="updateImage()" class="btn btn-warning">Update Image</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
         // Create functions
         async function createCategory() {
             const title = document.getElementById('categoryTitle').value;
@@ -1087,6 +1527,94 @@
             await testEndpoint('POST', '/api/images', formData, true, true);
         }
 
+        // Update functions
+        async function updateCategory() {
+            const categoryId = document.getElementById('updateCategoryIdInput').value;
+            const title = document.getElementById('updateCategoryTitle').value;
+            const description = document.getElementById('updateCategoryDescription').value;
+            const imageFile = document.getElementById('updateCategoryImage').files[0];
+            
+            if (!title && !description && !imageFile) {
+                showResponse('Error', 'At least one field must be provided for update', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            if (title) formData.append('title', title);
+            if (description) formData.append('description', description);
+            if (imageFile) formData.append('image', imageFile);
+            
+            closeModal();
+            await testEndpoint('PUT', `/api/categories/${categoryId}`, formData, true, true);
+        }
+
+        async function updateWork() {
+            const workId = document.getElementById('updateWorkIdInput').value;
+            const title = document.getElementById('updateWorkTitle').value;
+            const description = document.getElementById('updateWorkDescription').value;
+            const categoryId = document.getElementById('updateWorkCategoryId').value;
+            const mainImage = document.getElementById('updateWorkMainImage').files[0];
+            const additionalImages = document.getElementById('updateWorkAdditionalImages').files;
+            
+            if (!title && !description && !categoryId && !mainImage && additionalImages.length === 0) {
+                showResponse('Error', 'At least one field must be provided for update', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            if (title) formData.append('title', title);
+            if (description) formData.append('description', description);
+            if (categoryId) formData.append('categoryId', categoryId);
+            if (mainImage) formData.append('mainImage', mainImage);
+            
+            for (let i = 0; i < additionalImages.length; i++) {
+                formData.append('additionalImages', additionalImages[i]);
+            }
+            
+            closeModal();
+            await testEndpoint('PUT', `/api/works/${workId}`, formData, true, true);
+        }
+
+        async function updateText() {
+            const textId = document.getElementById('updateTextIdInput').value;
+            const title = document.getElementById('updateTextTitle').value;
+            const content = document.getElementById('updateTextContent').value;
+            const category = document.getElementById('updateTextCategory').value;
+            
+            if (!title && !content && !category) {
+                showResponse('Error', 'At least one field must be provided for update', 'error');
+                return;
+            }
+            
+            const body = {};
+            if (title) body.title = title;
+            if (content) body.content = content;
+            if (category) body.category = category;
+            
+            closeModal();
+            await testEndpoint('PUT', `/api/texts/${textId}`, body, true);
+        }
+
+        async function updateImage() {
+            const imageId = document.getElementById('updateImageIdInput').value;
+            const title = document.getElementById('updateImageTitle').value;
+            const description = document.getElementById('updateImageDescription').value;
+            const category = document.getElementById('updateImageCategory').value;
+            
+            if (!title && !description && !category) {
+                showResponse('Error', 'At least one field must be provided for update', 'error');
+                return;
+            }
+            
+            const body = {};
+            if (title) body.title = title;
+            if (description) body.description = description;
+            if (category) body.category = category;
+            
+            closeModal();
+            await testEndpoint('PUT', `/api/images/${imageId}`, body, true);
+        }
+
         // Utility functions
         function showResponse(title, content, type = 'success') {
             const container = document.getElementById('responseContainer');
@@ -1149,6 +1677,376 @@
                 closeModal();
             }
         });
+
+        // Advanced testing functions
+        async function testAllCRUDOperations() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first to test CRUD operations', 'error');
+                return;
+            }
+            
+            showResponse('CRUD Test', 'Testing all CRUD operations...', 'loading');
+            
+            const crudTests = [
+                // Categories CRUD
+                { method: 'GET', url: '/api/categories', name: 'List Categories' },
+                { method: 'GET', url: '/api/categories/1', name: 'Get Category by ID' },
+                
+                // Works CRUD
+                { method: 'GET', url: '/api/works', name: 'List Works' },
+                { method: 'GET', url: '/api/works/1', name: 'Get Work by ID' },
+                { method: 'GET', url: '/api/works/category/1', name: 'Get Works by Category' },
+                
+                // Texts CRUD
+                { method: 'GET', url: '/api/texts', name: 'List Texts' },
+                { method: 'GET', url: '/api/texts/1', name: 'Get Text by ID' },
+                
+                // Images CRUD
+                { method: 'GET', url: '/api/images', name: 'List Images' },
+                { method: 'GET', url: '/api/images/1', name: 'Get Image by ID' },
+                { method: 'GET', url: '/api/images/category/portfolio', name: 'Get Images by Category' }
+            ];
+            
+            let results = [];
+            
+            for (const test of crudTests) {
+                try {
+                    const startTime = Date.now();
+                    const response = await fetch(`${apiBaseUrl}${test.url}`, {
+                        method: test.method,
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    const endTime = Date.now();
+                    const data = await response.json();
+                    
+                    results.push({
+                        test: test.name,
+                        endpoint: `${test.method} ${test.url}`,
+                        status: response.status,
+                        success: response.ok,
+                        responseTime: `${endTime - startTime}ms`,
+                        dataCount: Array.isArray(data.data) ? data.data.length : (data.data ? 1 : 0)
+                    });
+                } catch (error) {
+                    results.push({
+                        test: test.name,
+                        endpoint: `${test.method} ${test.url}`,
+                        status: 'ERROR',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            showResponse('CRUD Operations Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        function showPaginationTestForm() {
+            const formHtml = `
+                <h3>Pagination Testing</h3>
+                <div class="form-group">
+                    <label class="form-label">Endpoint:</label>
+                    <select id="paginationEndpoint" class="form-control">
+                        <option value="/api/categories">Categories</option>
+                        <option value="/api/works">Works</option>
+                        <option value="/api/texts">Texts</option>
+                        <option value="/api/images">Images</option>
+                        <option value="/api/public/categories">Public Categories</option>
+                        <option value="/api/public/works">Public Works</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Page Size:</label>
+                    <input type="number" id="pageSize" class="form-control" value="10" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Number of Pages to Test:</label>
+                    <input type="number" id="pagesToTest" class="form-control" value="3" min="1" max="10">
+                </div>
+                <button onclick="runPaginationTest()" class="btn btn-success">Run Pagination Test</button>
+            `;
+            
+            showModal(formHtml);
+        }
+
+        async function runPaginationTest() {
+            const endpoint = document.getElementById('paginationEndpoint').value;
+            const pageSize = parseInt(document.getElementById('pageSize').value);
+            const pagesToTest = parseInt(document.getElementById('pagesToTest').value);
+            
+            closeModal();
+            showResponse('Pagination Test', 'Testing pagination...', 'loading');
+            
+            const isPublic = endpoint.includes('/public/');
+            const results = [];
+            
+            for (let page = 1; page <= pagesToTest; page++) {
+                try {
+                    const url = `${apiBaseUrl}${endpoint}?page=${page}&limit=${pageSize}`;
+                    const headers = {};
+                    
+                    if (!isPublic && authToken) {
+                        headers['Authorization'] = `Bearer ${authToken}`;
+                    }
+                    
+                    const startTime = Date.now();
+                    const response = await fetch(url, { headers });
+                    const endTime = Date.now();
+                    const data = await response.json();
+                    
+                    results.push({
+                        page: page,
+                        status: response.status,
+                        success: response.ok,
+                        responseTime: `${endTime - startTime}ms`,
+                        itemCount: Array.isArray(data.data) ? data.data.length : 0,
+                        hasMore: data.meta ? page < data.meta.totalPages : false
+                    });
+                } catch (error) {
+                    results.push({
+                        page: page,
+                        status: 'ERROR',
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            showResponse('Pagination Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        async function runBulkTests() {
+            if (!authToken) {
+                showResponse('Error', 'Please login first for bulk testing', 'error');
+                return;
+            }
+            
+            showResponse('Bulk Test', 'Running comprehensive bulk tests...', 'loading');
+            
+            const testSuites = {
+                'Info Endpoints': [
+                    '/api/categories/info',
+                    '/api/works/info',
+                    '/api/texts/info'
+                ],
+                'Public Endpoints': [
+                    '/api/public/categories',
+                    '/api/public/works',
+                    '/api/texts/published',
+                    '/api/images'
+                ],
+                'Admin Endpoints': [
+                    '/api/admin/profile',
+                    '/api/categories',
+                    '/api/works',
+                    '/api/texts'
+                ]
+            };
+            
+            const results = {};
+            
+            for (const [suiteName, endpoints] of Object.entries(testSuites)) {
+                results[suiteName] = [];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        const startTime = Date.now();
+                        const headers = {};
+                        
+                        if (suiteName === 'Admin Endpoints') {
+                            headers['Authorization'] = `Bearer ${authToken}`;
+                        }
+                        
+                        const response = await fetch(`${apiBaseUrl}${endpoint}`, { headers });
+                        const endTime = Date.now();
+                        const data = await response.json();
+                        
+                        results[suiteName].push({
+                            endpoint: endpoint,
+                            status: response.status,
+                            success: response.ok,
+                            responseTime: `${endTime - startTime}ms`,
+                            message: data.message || 'Success'
+                        });
+                    } catch (error) {
+                        results[suiteName].push({
+                            endpoint: endpoint,
+                            status: 'ERROR',
+                            success: false,
+                            error: error.message
+                        });
+                    }
+                }
+            }
+            
+            showResponse('Bulk Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        async function runPerformanceTests() {
+            showResponse('Performance Test', 'Running performance tests...', 'loading');
+            
+            const testEndpoints = [
+                '/health',
+                '/api/public/categories',
+                '/api/public/works',
+                '/api/images'
+            ];
+            
+            const results = [];
+            const iterations = 5;
+            
+            for (const endpoint of testEndpoints) {
+                const times = [];
+                
+                for (let i = 0; i < iterations; i++) {
+                    try {
+                        const startTime = performance.now();
+                        const response = await fetch(`${apiBaseUrl}${endpoint}`);
+                        await response.json();
+                        const endTime = performance.now();
+                        times.push(endTime - startTime);
+                    } catch (error) {
+                        times.push(-1); // Error indicator
+                    }
+                }
+                
+                const validTimes = times.filter(t => t > 0);
+                const avgTime = validTimes.length > 0 ? (validTimes.reduce((a, b) => a + b, 0) / validTimes.length).toFixed(2) : 'N/A';
+                const minTime = validTimes.length > 0 ? Math.min(...validTimes).toFixed(2) : 'N/A';
+                const maxTime = validTimes.length > 0 ? Math.max(...validTimes).toFixed(2) : 'N/A';
+                
+                results.push({
+                    endpoint: endpoint,
+                    iterations: iterations,
+                    successRate: `${validTimes.length}/${iterations}`,
+                    averageTime: `${avgTime}ms`,
+                    minTime: `${minTime}ms`,
+                    maxTime: `${maxTime}ms`
+                });
+            }
+            
+            showResponse('Performance Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        async function testErrorScenarios() {
+            showResponse('Error Scenarios Test', 'Testing error handling...', 'loading');
+            
+            const errorTests = [
+                { name: 'Invalid Category ID', method: 'GET', url: '/api/categories/999999', expectStatus: 404 },
+                { name: 'Invalid Work ID', method: 'GET', url: '/api/works/999999', expectStatus: 404 },
+                { name: 'Invalid Text ID', method: 'GET', url: '/api/texts/999999', expectStatus: 404 },
+                { name: 'Invalid Image ID', method: 'GET', url: '/api/images/999999', expectStatus: 404 },
+                { name: 'Unauthorized Access', method: 'GET', url: '/api/admin/profile', expectStatus: 401 },
+                { name: 'Invalid Endpoint', method: 'GET', url: '/api/nonexistent', expectStatus: 404 }
+            ];
+            
+            const results = [];
+            
+            for (const test of errorTests) {
+                try {
+                    const headers = {};
+                    if (test.name !== 'Unauthorized Access' && authToken) {
+                        headers['Authorization'] = `Bearer ${authToken}`;
+                    }
+                    
+                    const response = await fetch(`${apiBaseUrl}${test.url}`, {
+                        method: test.method,
+                        headers: headers
+                    });
+                    const data = await response.json();
+                    
+                    results.push({
+                        test: test.name,
+                        endpoint: `${test.method} ${test.url}`,
+                        expectedStatus: test.expectStatus,
+                        actualStatus: response.status,
+                        correctError: response.status === test.expectStatus,
+                        errorMessage: data.error || data.message
+                    });
+                } catch (error) {
+                    results.push({
+                        test: test.name,
+                        endpoint: `${test.method} ${test.url}`,
+                        expectedStatus: test.expectStatus,
+                        actualStatus: 'NETWORK_ERROR',
+                        correctError: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            showResponse('Error Scenarios Test Results', JSON.stringify(results, null, 2), 'success');
+        }
+
+        async function validateResponses() {
+            showResponse('Response Validation', 'Validating API response schemas...', 'loading');
+            
+            const validationTests = [
+                {
+                    name: 'Health Check',
+                    endpoint: '/health',
+                    requiredFields: ['status', 'message', 'timestamp', 'version']
+                },
+                {
+                    name: 'Categories List',
+                    endpoint: '/api/public/categories',
+                    requiredFields: ['message', 'data'],
+                    dataStructure: 'array'
+                },
+                {
+                    name: 'Works List',
+                    endpoint: '/api/public/works',
+                    requiredFields: ['message', 'data'],
+                    dataStructure: 'array'
+                }
+            ];
+            
+            const results = [];
+            
+            for (const test of validationTests) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}${test.endpoint}`);
+                    const data = await response.json();
+                    
+                    const validation = {
+                        test: test.name,
+                        endpoint: test.endpoint,
+                        status: response.status,
+                        hasRequiredFields: true,
+                        missingFields: [],
+                        correctDataStructure: true
+                    };
+                    
+                    // Check required fields
+                    for (const field of test.requiredFields) {
+                        if (!(field in data)) {
+                            validation.hasRequiredFields = false;
+                            validation.missingFields.push(field);
+                        }
+                    }
+                    
+                    // Check data structure
+                    if (test.dataStructure === 'array' && data.data && !Array.isArray(data.data)) {
+                        validation.correctDataStructure = false;
+                    }
+                    
+                    validation.isValid = validation.hasRequiredFields && validation.correctDataStructure;
+                    results.push(validation);
+                } catch (error) {
+                    results.push({
+                        test: test.name,
+                        endpoint: test.endpoint,
+                        status: 'ERROR',
+                        isValid: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            showResponse('Response Validation Results', JSON.stringify(results, null, 2), 'success');
+        }
 
         // Auto-detect API base URL
         console.log('API Test Page Loaded');

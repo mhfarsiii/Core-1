@@ -45,13 +45,18 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 // CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (like mobile apps, curl requests, or local file:// access)
     if (!origin) return callback(null, true);
     
-    // In development, allow all localhost origins
+    // In development, allow all localhost origins and file:// protocol
     if (config.server.nodeEnv === 'development') {
       const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
-      if (isLocalhost) return callback(null, true);
+      const isFileProtocol = origin.startsWith('file://');
+      const isNullOrigin = origin === 'null'; // Some browsers send 'null' for file:// protocol
+      
+      if (isLocalhost || isFileProtocol || isNullOrigin) {
+        return callback(null, true);
+      }
     }
     
     // Check against configured origins
@@ -59,12 +64,17 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Reject other origins
+    // In development, be more permissive for testing
+    if (config.server.nodeEnv === 'development') {
+      return callback(null, true);
+    }
+    
+    // Reject other origins in production
     callback(new Error('Not allowed by CORS'));
   },
   credentials: config.cors.credentials,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
   optionsSuccessStatus: 200
 }));
 
@@ -118,7 +128,8 @@ app.get('/', (req: express.Request, res: express.Response) => {
       examples: {
         admin_panel: '/admin-panel',
         upload_example: '/upload-example',
-        portfolio_website: '/portfolio-website'
+        portfolio_website: '/portfolio-website',
+        api_test_interface: '/test'
       },
       note: 'Use /api/ prefix for all API endpoints when accessing via IP'
     });
@@ -217,6 +228,30 @@ app.get('/portfolio-website', (req: express.Request, res: express.Response) => {
   }
 });
 
+// API Test Interface - serve the api-test.html file
+app.get('/api-test', (req: express.Request, res: express.Response) => {
+  try {
+    res.sendFile(path.join(__dirname, '../api-test.html'));
+  } catch (error) {
+    res.status(404).json({ message: 'API test interface not found' });
+  }
+});
+
+// Serve the api-test.html file with proper headers
+app.get('/test', (req: express.Request, res: express.Response) => {
+  try {
+    // Set proper headers for HTML content
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    res.sendFile(path.join(__dirname, '../api-test.html'));
+  } catch (error) {
+    res.status(404).json({ message: 'API test interface not found' });
+  }
+});
+
 // 404 handler for undefined routes (must be before error handler)
 app.use(notFoundHandler);
 
@@ -254,6 +289,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   
   if (config.server.nodeEnv !== 'production') {
     console.log(`📄 Examples: ${baseUrl}/examples/`);
+    console.log(`🧪 API Test Interface: ${baseUrl}/test`);
     console.log(`🏥 Health Check: ${baseUrl}/health`);
     console.log(`📚 API Documentation: Available at root endpoint`);
   }
