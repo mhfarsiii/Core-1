@@ -15,6 +15,7 @@ import adminRoutes from './routes/adminRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import workRoutes from './routes/workRoutes';
 import publicRoutes from './routes/publicRoutes';
+import userRoutes from './routes/userRoutes';
 
 const app = express();
 const PORT = config.server.port;
@@ -123,7 +124,8 @@ app.get('/', (req: express.Request, res: express.Response) => {
         admin: '/api/admin', 
         categories: '/api/categories',
         works: '/api/works',
-        public: '/api/public'
+        public: '/api/public',
+        users: '/api/users'
       },
       examples: {
         admin_panel: '/admin-panel',
@@ -164,6 +166,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/works', workRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/users', userRoutes);
 
 // Domain-specific API routes (for api.hamedaei.com without /api prefix)
 // Note: Mounting routes conditionally for api.hamedaei.com subdomain
@@ -176,6 +179,7 @@ if (host.includes('hamedaei.com')) {
   app.use('/categories', categoryRoutes);
   app.use('/works', workRoutes);
   app.use('/public', publicRoutes);
+  app.use('/users', userRoutes);
 }
 
 // Health check endpoint
@@ -196,7 +200,8 @@ app.get('/health', (req: express.Request, res: express.Response) => {
       admin: '/api/admin',
       categories: '/api/categories',
       works: '/api/works',
-      public: '/api/public'
+      public: '/api/public',
+      users: '/api/users'
     }
   };
   

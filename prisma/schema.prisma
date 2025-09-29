@@ -20,8 +20,6 @@ model Admin {
   updatedAt    DateTime @updatedAt
   
   @@map("admins")
-  @@index([email])
-  @@index([username])
 }
 
 model Category {
@@ -39,9 +37,6 @@ model Category {
   works       Work[]
   
   @@map("categories")
-  @@index([isActive])
-  @@index([sortOrder])
-  @@index([slug])
 }
 
 model Work {
@@ -50,9 +45,9 @@ model Work {
   slug             String   @unique // URL-friendly version of title
   description      String? // Work description
   mainImageUrl     String // Main work image
-  additionalImages String? // Additional images (JSON array)
+  additionalImages String? // Additional images (JSON string)
   videoLink        String? // Video link (optional)
-  tags             String? // Tags for better categorization
+  tags             String? // Tags for better categorization (JSON string)
   isPublished      Boolean  @default(true)
   isFeatured       Boolean  @default(false) // For highlighting important works
   viewCount        Int      @default(0) // Track popularity
@@ -65,12 +60,6 @@ model Work {
   category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   
   @@map("works")
-  @@index([categoryId])
-  @@index([isPublished])
-  @@index([isFeatured])
-  @@index([slug])
-  @@index([sortOrder])
-  @@index([createdAt])
 }
 
 model Image {
@@ -80,7 +69,7 @@ model Image {
   description String? // Image description
   altText     String? // Alt text for accessibility
   category    String? // Category (e.g., design, photography, code)
-  tags        String? // Tags for better organization
+  tags        String? // Tags for better organization (JSON string)
   fileSize    Int?     // File size in bytes
   mimeType    String? // MIME type
   width       Int?     // Image width in pixels
@@ -90,9 +79,22 @@ model Image {
   updatedAt   DateTime @updatedAt
   
   @@map("images")
-  @@index([category])
-  @@index([isPublic])
-  @@index([createdAt])
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
+  isActive        Boolean   @default(true)
+  emailVerified   Boolean   @default(false)
+  lastLoginAt     DateTime?
+  shoppingCart    String?   // Shopping cart items (JSON string)
+  favoriteProducts String?  // Favorite products (JSON string)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@map("users")
 }
 
 model Text {
@@ -102,7 +104,7 @@ model Text {
   content     String
   excerpt     String? // Text summary
   category    String? // Category (e.g., blog, project, about)
-  tags        String? // Tags for better categorization
+  tags        String? // Tags for better categorization (JSON string)
   published   Boolean  @default(false) // Whether published or not
   publishedAt DateTime? // When it was published
   viewCount   Int      @default(0) // Track popularity
@@ -113,9 +115,4 @@ model Text {
   updatedAt   DateTime @updatedAt
   
   @@map("texts")
-  @@index([published])
-  @@index([category])
-  @@index([slug])
-  @@index([publishedAt])
-  @@index([createdAt])
 } 

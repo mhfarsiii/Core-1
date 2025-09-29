@@ -8,7 +8,10 @@ import {
   LoginResult, 
   AdminProfile, 
   JwtPayload,
-  IAdminService 
+  IAdminService,
+  UserStats,
+  PaginatedUsers,
+  UserProfile
 } from '../types/interfaces';
 import { 
   AuthenticationError, 
@@ -174,6 +177,239 @@ export class AdminService implements IAdminService {
         throw error;
       }
       throw new DatabaseError('Failed to fetch admin');
+    }
+  }
+
+  // ========================
+  // User Management Methods
+  // ========================
+
+  async getUserStats(): Promise<UserStats> {
+    try {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const [
+        totalUsers,
+        activeUsers,
+        verifiedUsers,
+        usersRegisteredToday,
+        usersRegisteredThisWeek,
+        usersRegisteredThisMonth,
+        recentUsers
+      ] = await Promise.all([
+        (prisma as any).user.count(),
+        (prisma as any).user.count({ where: { isActive: true } }),
+        (prisma as any).user.count({ where: { emailVerified: true } }),
+        (prisma as any).user.count({ where: { createdAt: { gte: todayStart } } }),
+        (prisma as any).user.count({ where: { createdAt: { gte: weekStart } } }),
+        (prisma as any).user.count({ where: { createdAt: { gte: monthStart } } }),
+        (prisma as any).user.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true,
+            emailVerified: true,
+            createdAt: true,
+            shoppingCart: true,
+            favoriteProducts: true
+          }
+        })
+      ]);
+
+      const inactiveUsers = totalUsers - activeUsers;
+      const unverifiedUsers = totalUsers - verifiedUsers;
+
+      const recentRegistrations = recentUsers.map((user: any) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isActive: user.isActive,
+        emailVerified: user.emailVerified,
+        shoppingCart: user.shoppingCart ? JSON.parse(user.shoppingCart) : [],
+        favoriteProducts: user.favoriteProducts ? JSON.parse(user.favoriteProducts) : [],
+        createdAt: user.createdAt
+      }));
+
+      return {
+        totalUsers,
+        activeUsers,
+        inactiveUsers,
+        verifiedUsers,
+        unverifiedUsers,
+        usersRegisteredToday,
+        usersRegisteredThisWeek,
+        usersRegisteredThisMonth,
+        recentRegistrations
+      };
+    } catch (error) {
+      console.error('Get user stats error:', error);
+      throw new DatabaseError('Failed to get user statistics');
+    }
+  }
+
+  async getAllUsers(page: number = 1, limit: number = 20): Promise<PaginatedUsers> {
+    try {
+      const skip = (page - 1) * limit;
+
+      const [users, total] = await Promise.all([
+        (prisma as any).user.findMany({
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true,
+            emailVerified: true,
+            lastLoginAt: true,
+            createdAt: true,
+            shoppingCart: true,
+            favoriteProducts: true
+          }
+        }),
+        (prisma as any).user.count()
+      ]);
+
+      const mappedUsers = users.map((user: any) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isActive: user.isActive,
+        emailVerified: user.emailVerified,
+        lastLoginAt: user.lastLoginAt,
+        shoppingCart: user.shoppingCart ? JSON.parse(user.shoppingCart) : [],
+        favoriteProducts: user.favoriteProducts ? JSON.parse(user.favoriteProducts) : [],
+        createdAt: user.createdAt
+      }));
+
+      return {
+        users: mappedUsers,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Get all users error:', error);
+      throw new DatabaseError('Failed to get users');
+    }
+  }
+
+  async getUserById(id: string): Promise<UserProfile | null> {
+    try {
+      if (!id) {
+        throw new ValidationError('User ID is required');
+      }
+
+      const user = await (prisma as any).user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          isActive: true,
+          emailVerified: true,
+          lastLoginAt: true,
+          createdAt: true,
+          shoppingCart: true,
+          favoriteProducts: true
+        }
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        isActive: user.isActive,
+        emailVerified: user.emailVerified,
+        lastLoginAt: user.lastLoginAt,
+        shoppingCart: user.shoppingCart ? JSON.parse(user.shoppingCart) : [],
+        favoriteProducts: user.favoriteProducts ? JSON.parse(user.favoriteProducts) : [],
+        createdAt: user.createdAt
+      };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      console.error('Get user by ID error:', error);
+      throw new DatabaseError('Failed to get user');
+    }
+  }
+
+  async deactivateUser(id: string): Promise<void> {
+    try {
+      if (!id) {
+        throw new ValidationError('User ID is required');
+      }
+
+      const user = await (prisma as any).user.findUnique({
+        where: { id },
+        select: { id: true, isActive: true }
+      });
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      if (!user.isActive) {
+        throw new ValidationError('User is already deactivated');
+      }
+
+      await (prisma as any).user.update({
+        where: { id },
+        data: { isActive: false }
+      });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      console.error('Deactivate user error:', error);
+      throw new DatabaseError('Failed to deactivate user');
+    }
+  }
+
+  async activateUser(id: string): Promise<void> {
+    try {
+      if (!id) {
+        throw new ValidationError('User ID is required');
+      }
+
+      const user = await (prisma as any).user.findUnique({
+        where: { id },
+        select: { id: true, isActive: true }
+      });
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      if (user.isActive) {
+        throw new ValidationError('User is already active');
+      }
+
+      await (prisma as any).user.update({
+        where: { id },
+        data: { isActive: true }
+      });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      console.error('Activate user error:', error);
+      throw new DatabaseError('Failed to activate user');
     }
   }
 } 

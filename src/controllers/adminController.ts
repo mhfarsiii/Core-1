@@ -73,6 +73,133 @@ export class AdminController {
     }
   }
 
+  // ========================
+  // User Management Methods
+  // ========================
+
+  async getUserStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.admin) {
+        throw new AuthenticationError('Admin authentication required');
+      }
+
+      const stats = await this.adminService.getUserStats();
+      
+      const response: ApiResponse = {
+        message: 'User statistics retrieved successfully',
+        data: stats
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  async getAllUsers(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.admin) {
+        throw new AuthenticationError('Admin authentication required');
+      }
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      if (page < 1 || limit < 1 || limit > 100) {
+        throw new ValidationError('Invalid pagination parameters');
+      }
+
+      const result = await this.adminService.getAllUsers(page, limit);
+      
+      const response: ApiResponse = {
+        message: 'Users retrieved successfully',
+        data: result.users,
+        meta: result.meta
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  async getUserById(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.admin) {
+        throw new AuthenticationError('Admin authentication required');
+      }
+
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ValidationError('User ID is required');
+      }
+
+      const user = await this.adminService.getUserById(id);
+      
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+      
+      const response: ApiResponse = {
+        message: 'User retrieved successfully',
+        data: user
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  async deactivateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.admin) {
+        throw new AuthenticationError('Admin authentication required');
+      }
+
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ValidationError('User ID is required');
+      }
+
+      await this.adminService.deactivateUser(id);
+      
+      const response: ApiResponse = {
+        message: 'User deactivated successfully'
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  async activateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      if (!req.admin) {
+        throw new AuthenticationError('Admin authentication required');
+      }
+
+      const { id } = req.params;
+      
+      if (!id) {
+        throw new ValidationError('User ID is required');
+      }
+
+      await this.adminService.activateUser(id);
+      
+      const response: ApiResponse = {
+        message: 'User activated successfully'
+      };
+      
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
   private handleError(error: unknown, res: Response): void {
     console.error('Controller error:', error);
     

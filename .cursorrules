@@ -4,8 +4,11 @@
 ## Project Overview
 This is a TypeScript/Express.js Personal Portfolio API with the following architecture:
 - **Backend**: Node.js + Express.js + TypeScript
-- **Database**: MySQL with Prisma ORM
-- **Authentication**: JWT-based admin authentication
+- **Database**: SQLite with Prisma ORM (development) / MySQL (production)
+- **Authentication**: Dual JWT-based authentication (Admin + User)
+- **User Management**: Complete user registration, login, and profile management
+- **Admin Dashboard**: User statistics and management capabilities
+- **E-commerce Features**: Shopping cart and favorite products for users
 - **File Upload**: Multer for image/file handling
 - **Deployment**: Docker + Production ready
 
@@ -14,27 +17,31 @@ This is a TypeScript/Express.js Personal Portfolio API with the following archit
 Core-1/
 ├── src/
 │   ├── controllers/          # Request handlers (MVC pattern)
-│   │   ├── adminController.ts
+│   │   ├── adminController.ts    # Admin auth + user management
 │   │   ├── categoryController.ts
 │   │   ├── imageController.ts
 │   │   ├── textController.ts
+│   │   ├── userController.ts     # User registration, login, profile
 │   │   └── workController.ts
 │   ├── services/            # Business logic layer
-│   │   ├── adminService.ts
+│   │   ├── adminService.ts       # Admin auth + user statistics
 │   │   ├── categoryService.ts
 │   │   ├── imageService.ts
 │   │   ├── prisma.ts
 │   │   ├── textService.ts
+│   │   ├── userService.ts        # User management & e-commerce
 │   │   └── workService.ts
 │   ├── middlewares/         # Express middlewares
-│   │   ├── auth.ts
+│   │   ├── auth.ts              # Admin + User JWT authentication
+│   │   ├── errorHandler.ts
 │   │   └── upload.ts
 │   ├── routes/             # API route definitions
-│   │   ├── adminRoutes.ts
+│   │   ├── adminRoutes.ts       # Admin auth + user management
 │   │   ├── categoryRoutes.ts
 │   │   ├── imageRoutes.ts
 │   │   ├── publicRoutes.ts
 │   │   ├── textRoutes.ts
+│   │   ├── userRoutes.ts        # User registration, login, cart, favorites
 │   │   └── workRoutes.ts
 │   ├── scripts/           # Database utilities
 │   │   └── seed.ts
@@ -245,12 +252,16 @@ export class CategoryService {
 ## Security Best Practices
 
 ### Authentication & Authorization
-- Use JWT tokens with appropriate expiration times
-- Implement refresh token mechanism for long-lived sessions
+- **Dual Authentication System**: Separate JWT tokens for Admin and Users
+- **Admin Authentication**: Username/password with admin privileges
+- **User Authentication**: Email/password for website users
+- Use JWT tokens with appropriate expiration times (7 days for users)
 - Hash passwords with bcrypt (minimum 12 rounds)
 - Validate and sanitize all inputs
 - Use HTTPS in production
 - Implement rate limiting for authentication endpoints
+- **Admin Middleware**: `authMiddleware` for admin routes
+- **User Middleware**: `userAuthMiddleware` for user routes
 
 ### Data Protection
 - Never log sensitive information (passwords, tokens)
@@ -370,19 +381,285 @@ requiredEnvVars.forEach(envVar => {
 10. **Update documentation when adding new features**
 
 ### Current Models & Relationships:
-- **Admin**: Authentication and authorization
+- **Admin**: Authentication and authorization for admin panel
+- **User**: Website user accounts with e-commerce features
 - **Category**: Work categorization with image support
 - **Work**: Portfolio items with main image and additional images
 - **Image**: Standalone image management
 - **Text**: Content management with publishing workflow
 
+### Database Schema (Prisma Models):
+```typescript
+// Admin model
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  email        String   @unique
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// User model (Website users)
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  passwordHash    String
+  isActive        Boolean   @default(true)
+  emailVerified   Boolean   @default(false)
+  lastLoginAt     DateTime?
+  shoppingCart    String?   // JSON string of cart items
+  favoriteProducts String?  // JSON string of favorite product IDs
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+```
+
 ### API Endpoints Structure:
-- `/api/admin/*` - Admin authentication and management
+
+#### **Admin Endpoints** (`/api/admin/*`):
+- `POST /api/admin/login` - Admin authentication
+- `POST /api/admin/create-admin` - Create admin (dev only)
+- `GET /api/admin/profile` - Get admin profile
+- `GET /api/admin/users/stats` - **User statistics for dashboard**
+- `GET /api/admin/users` - **Get all users with pagination**
+- `GET /api/admin/users/:id` - **Get specific user details**
+- `PUT /api/admin/users/:id/activate` - **Activate user account**
+- `PUT /api/admin/users/:id/deactivate` - **Deactivate user account**
+
+#### **User Endpoints** (`/api/users/*`):
+- `POST /api/users/register` - **User registration**
+- `POST /api/users/login` - **User login**
+- `GET /api/users/profile` - **Get user profile (protected)**
+- `PUT /api/users/profile` - **Update user profile (protected)**
+- `DELETE /api/users/account` - **Deactivate user account (protected)**
+
+#### **Shopping Cart Endpoints** (`/api/users/cart/*`):
+- `PUT /api/users/cart` - **Update entire shopping cart**
+- `POST /api/users/cart/add` - **Add item to cart**
+- `DELETE /api/users/cart/remove/:itemId` - **Remove item from cart**
+
+#### **Favorites Endpoints** (`/api/users/favorites/*`):
+- `PUT /api/users/favorites` - **Update favorites list**
+- `POST /api/users/favorites/add` - **Add product to favorites**
+- `DELETE /api/users/favorites/remove/:productId` - **Remove from favorites**
+
+#### **Portfolio Endpoints**:
 - `/api/categories/*` - Category CRUD operations
 - `/api/works/*` - Portfolio work management
 - `/api/images/*` - Image upload and management
 - `/api/texts/*` - Text content management
 - `/api/public/*` - Public-facing endpoints
 
-Remember: This project serves a personal portfolio with admin panel, multi-domain support, and file upload capabilities. Always maintain the existing patterns and security measures.
+## User Management & E-commerce Features
+
+### User Registration & Authentication
+```typescript
+// User registration with validation
+{
+  name: string,           // Full name (min 2 chars)
+  email: string,          // Valid email format
+  password: string,       // Min 6 chars
+  confirmPassword: string // Must match password
+}
+
+// User login
+{
+  email: string,    // Email address
+  password: string  // User password
+}
+
+// Response includes JWT token + user profile
+{
+  token: string,
+  user: UserProfile
+}
+```
+
+### Shopping Cart Management
+```typescript
+// Cart item structure
+interface CartItem {
+  id: string,           // Unique cart item ID
+  productId: string,    // Product identifier
+  productName: string,  // Product name
+  quantity: number,     // Item quantity
+  price: number,        // Item price
+  imageUrl?: string     // Optional product image
+}
+
+// Cart operations
+- Add items to cart with automatic quantity updates
+- Remove specific items by cart item ID
+- Update entire cart contents
+- Persistent cart storage in user profile
+```
+
+### Favorite Products
+```typescript
+// Favorites are stored as array of product IDs
+favoriteProducts: string[]
+
+// Operations
+- Add product to favorites (prevents duplicates)
+- Remove product from favorites
+- Update entire favorites list
+- Persistent favorites storage in user profile
+```
+
+### Admin Dashboard - User Statistics
+```typescript
+// User statistics interface
+interface UserStats {
+  totalUsers: number,
+  activeUsers: number,
+  inactiveUsers: number,
+  verifiedUsers: number,
+  unverifiedUsers: number,
+  usersRegisteredToday: number,
+  usersRegisteredThisWeek: number,
+  usersRegisteredThisMonth: number,
+  recentRegistrations: UserProfile[]
+}
+```
+
+### Database Considerations
+- **SQLite for Development**: Fast setup, no external dependencies
+- **MySQL for Production**: Scalable, production-ready
+- **JSON Fields**: Shopping cart and favorites stored as JSON strings for SQLite compatibility
+- **Type Safety**: Custom parsing with error handling for JSON fields
+- **Indexes**: Proper indexing on frequently queried fields (email, isActive, createdAt)
+
+### API Response Format
+All endpoints follow consistent response structure:
+```typescript
+{
+  message: string,              // Success/error message
+  data?: any,                   // Response data
+  error?: string,               // Error message
+  meta?: PaginationMeta         // Pagination info
+}
+```
+
+### Error Handling
+- **ValidationError**: Input validation failures (400)
+- **AuthenticationError**: Auth failures (401)
+- **NotFoundError**: Resource not found (404)
+- **ConflictError**: Duplicate resources (409)
+- **DatabaseError**: DB operation failures (500)
+
+### Security Measures
+- Password hashing with bcrypt (12 rounds)
+- JWT tokens with 7-day expiration
+- Input validation at controller level
+- SQL injection protection via Prisma
+- No sensitive data exposure (password hashes hidden)
+- Separate admin and user authentication contexts
+
+## Usage Examples
+
+### Admin Authentication & User Management
+```bash
+# Admin login
+curl -X POST http://localhost:3000/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
+
+# Get user statistics for dashboard
+curl -X GET http://localhost:3000/api/admin/users/stats \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+
+# Get all users with pagination
+curl -X GET "http://localhost:3000/api/admin/users?page=1&limit=20" \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+
+# Deactivate user
+curl -X PUT http://localhost:3000/api/admin/users/USER_ID/deactivate \
+  -H "Authorization: Bearer ADMIN_JWT_TOKEN"
+```
+
+### User Registration & Authentication
+```bash
+# User registration
+curl -X POST http://localhost:3000/api/users/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "password123",
+    "confirmPassword": "password123"
+  }'
+
+# User login
+curl -X POST http://localhost:3000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "john@example.com", "password": "password123"}'
+
+# Get user profile
+curl -X GET http://localhost:3000/api/users/profile \
+  -H "Authorization: Bearer USER_JWT_TOKEN"
+```
+
+### Shopping Cart Operations
+```bash
+# Add item to cart
+curl -X POST http://localhost:3000/api/users/cart/add \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer USER_JWT_TOKEN" \
+  -d '{
+    "productId": "product-1",
+    "productName": "Sample Product",
+    "quantity": 2,
+    "price": 29.99,
+    "imageUrl": "https://example.com/image.jpg"
+  }'
+
+# Remove item from cart
+curl -X DELETE http://localhost:3000/api/users/cart/remove/CART_ITEM_ID \
+  -H "Authorization: Bearer USER_JWT_TOKEN"
+```
+
+### Favorites Management
+```bash
+# Add to favorites
+curl -X POST http://localhost:3000/api/users/favorites/add \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer USER_JWT_TOKEN" \
+  -d '{"productId": "product-1"}'
+
+# Remove from favorites
+curl -X DELETE http://localhost:3000/api/users/favorites/remove/product-1 \
+  -H "Authorization: Bearer USER_JWT_TOKEN"
+```
+
+### Current System Status
+- ✅ **User Registration & Login**: Complete with JWT authentication
+- ✅ **Shopping Cart**: Full CRUD operations with persistence
+- ✅ **Favorite Products**: Add/remove with duplicate prevention
+- ✅ **Admin Dashboard**: User statistics and management
+- ✅ **User Management**: Admin can view, activate, deactivate users
+- ✅ **Database**: SQLite (dev) with proper schema and migrations
+- ✅ **Security**: Bcrypt password hashing, JWT tokens, input validation
+- ✅ **Error Handling**: Comprehensive error handling with proper HTTP codes
+- ✅ **Type Safety**: Full TypeScript implementation with interfaces
+
+### Development Setup
+```bash
+# Environment variables required
+NODE_ENV=development
+DATABASE_URL="file:./prisma/dev.db"
+JWT_SECRET="your-secret-key"
+
+# Start development server
+npm run build && npm start
+
+# Create admin user (via seed script)
+npx tsx src/scripts/seed.ts
+# Default admin: username="admin", password="admin123"
+```
+
+Remember: This project serves a personal portfolio with admin panel, user management, e-commerce features, multi-domain support, and file upload capabilities. Always maintain the existing patterns and security measures.
 

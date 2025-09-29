@@ -53,6 +53,103 @@ export interface JwtPayload {
 }
 
 // ========================
+// User Interfaces
+// ========================
+export interface UserRegistrationData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface UserLoginData {
+  email: string;
+  password: string;
+}
+
+export interface CreateUserData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface UserLoginResult {
+  token: string;
+  user: UserProfile;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  lastLoginAt?: Date | null;
+  shoppingCart?: CartItem[];
+  favoriteProducts?: string[];
+  createdAt: Date;
+}
+
+export interface UpdateUserData {
+  name?: string;
+  email?: string;
+  password?: string;
+}
+
+export interface CartItem {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  imageUrl?: string;
+}
+
+export interface UserJwtPayload {
+  id: string;
+  email: string;
+  name: string;
+}
+
+// User database model interface
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  lastLoginAt: Date | null;
+  shoppingCart: string | null;
+  favoriteProducts: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Admin user management interfaces
+export interface UserStats {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  verifiedUsers: number;
+  unverifiedUsers: number;
+  usersRegisteredToday: number;
+  usersRegisteredThisWeek: number;
+  usersRegisteredThisMonth: number;
+  recentRegistrations: UserProfile[];
+}
+
+export interface PaginatedUsers {
+  users: UserProfile[];
+  meta: PaginationMeta;
+}
+
+export interface AdminUserProfile extends UserProfile {
+  passwordHash?: never; // Never expose password hash
+}
+
+
+// ========================
 // Category Interfaces
 // ========================
 export interface CreateCategoryData {
@@ -163,6 +260,10 @@ export interface AuthenticatedRequest extends Request {
   admin?: AdminProfile;
 }
 
+export interface UserAuthenticatedRequest extends Request {
+  user?: UserProfile;
+}
+
 export interface RequestWithFile extends Request {
   file?: Express.Multer.File;
 }
@@ -181,6 +282,11 @@ export interface IAdminService {
   createAdmin(data: CreateAdminData): Promise<Admin>;
   verifyToken(token: string): Promise<AdminProfile>;
   getAdminById(id: string): Promise<AdminProfile | null>;
+  getUserStats(): Promise<UserStats>;
+  getAllUsers(page?: number, limit?: number): Promise<PaginatedUsers>;
+  getUserById(id: string): Promise<UserProfile | null>;
+  deactivateUser(id: string): Promise<void>;
+  activateUser(id: string): Promise<void>;
 }
 
 export interface ICategoryService {
@@ -217,4 +323,15 @@ export interface ITextService {
   deleteText(id: string): Promise<void>;
   publishText(id: string): Promise<Text>;
   unpublishText(id: string): Promise<Text>;
+}
+
+export interface IUserService {
+  registerUser(data: UserRegistrationData): Promise<UserLoginResult>;
+  loginUser(data: UserLoginData): Promise<UserLoginResult>;
+  getUserById(id: string): Promise<UserProfile | null>;
+  updateUser(id: string, data: UpdateUserData): Promise<UserProfile>;
+  updateShoppingCart(id: string, cart: CartItem[]): Promise<UserProfile>;
+  updateFavoriteProducts(id: string, favorites: string[]): Promise<UserProfile>;
+  verifyToken(token: string): Promise<UserProfile>;
+  deactivateUser(id: string): Promise<void>;
 }
